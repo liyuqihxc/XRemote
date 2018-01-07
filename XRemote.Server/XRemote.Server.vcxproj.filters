@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="class">
+      <UniqueIdentifier>{21545737-3e3f-4582-8f98-c22c599682af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="生成的文件">
+      <UniqueIdentifier>{abf2e4ae-a153-4e27-a153-b873a8709acb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Exceptions.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Locks.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Network.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Pool.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\ProxyStub.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Service.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\stdafx.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="MainApp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Crypt.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\hxc.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Event.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\stdTrunk.hpp">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Environment.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="class\SystemInfo.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Res.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Utility.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="xRemoteServer_h.h">
+      <Filter>生成的文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RPC.pb.h">
+      <Filter>生成的文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ClassFactoryStub.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="class\Tasks.h">
+      <Filter>class</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Exceptions.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Locks.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Network.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\ProxyStub.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Service.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="MainApp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Crypt.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Environment.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\SystemInfo.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="Res.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Utility.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="xRemoteServer_i.c">
+      <Filter>生成的文件</Filter>
+    </ClCompile>
+    <ClCompile Include="RPC.pb.cc">
+      <Filter>生成的文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassFactoryStub.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Tasks.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\AsyncResultImpl.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="class\Pool.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class\MemoryStream.cpp">
+      <Filter>class</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="XRemote.Server.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="XRemote.Server.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="class\xRemoteServer.idl">
+      <Filter>class</Filter>
+    </Midl>
+  </ItemGroup>
+</Project>

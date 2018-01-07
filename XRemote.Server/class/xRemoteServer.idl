@@ -1,0 +1,79 @@
+﻿
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+    uuid(F013C171-EDD1-48E8-83F2-D5C0DD621E46),
+    version(1.0)
+]
+library xRemoteServerLib
+{
+    importlib("stdole2.tlb");
+    // tlbimp xRemoteServer.tlb /namespace:xRemoteServerLib /out:xRemoteServerLib.dll
+    [
+        object,
+        uuid(83A9F23F-1DF3-4C5F-A54E-698C35A7A908),
+        version(1.0),
+        helpstring("IRemoteClassFactory"),
+        dual,
+        oleautomation
+    ]
+    interface IRemoteClassFactory : IDispatch
+    {
+        [id(1)] HRESULT CreateInstance(
+            [in] REFIID riid,
+            [out] IUnknown **ppObject
+        );
+
+        [id(2)] HRESULT LockServer(BOOL fLock);
+    };
+
+    [
+        uuid(F4B59339-9492-451F-8F84-742B43C355A1),
+        version(1.0),
+        helpstring("xRemoteServerClassFactory Class")
+    ]
+    coclass xRemoteServerClassFactory
+    {
+        [default] interface IRemoteClassFactory;
+    };
+    /************************************************************************/
+    [
+        object,
+        uuid(5FA6533F-A1A9-4666-911B-319071A71085),
+        version(1.0),
+        helpstring("IShellFolder"),
+        dual,
+        oleautomation
+    ]
+    interface IShellFolder : IDispatch
+    {
+        [id(3)] HRESULT show();    //No arguments, no result 
+        [id(11)] HRESULT computeit(int inarg, double *outarg);
+    };
+
+    [
+        object,
+        uuid(5F526937-8A2E-4BB1-923D-DD78E668B4FF),
+        version(1.0),
+        helpstring("ISystemInfo"),
+        dual,
+        oleautomation
+    ]
+    interface ISystemInfo : IDispatch
+    {
+        
+    };
+
+    [
+        uuid(D8C967BC-FC34-49A7-9DC3-247B4D96E434),
+        version(1.0),
+        helpstring("xRemoteClassFactory Class")
+    ]
+    coclass xRemoteServer
+    {
+        [default] interface IShellFolder;
+        interface ISystemInfo;
+    };
+}
+

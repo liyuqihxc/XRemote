@@ -1,0 +1,11 @@
+﻿{
+    "General": {
+        "LibCefDirPath": "",
+        "LibCefResourcesDirPath": "",
+        "LibCefLocalesDirPath":  ""
+    },
+    "Network": {
+        "ListenEndPoint": "0.0.0.0:55413",
+        "AcceptProxyTimeout": 30
+    }
+}
