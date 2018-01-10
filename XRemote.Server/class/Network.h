@@ -23,7 +23,6 @@ namespace hxc
         friend class SocketAsyncResultImpl;
     protected:
         SOCKET s;
-    public:
         Socket();
     public:
 #pragma region Properties
@@ -32,20 +31,26 @@ namespace hxc
 #pragma endregion
 
 #pragma region Methods
-        IAsyncResult* BeginAccept(
-            _In_ Socket& AcceptSocket,
+        static std::shared_ptr<Socket> Create();
+
+        std::shared_ptr<IAsyncResult> BeginAccept(
+            _In_ std::shared_ptr<Socket> AcceptSocket,
             _In_ DWORD receiveSize,
             _In_ const ASYNCCALLBACK& Callback,
             _In_ DWORD_PTR Context
         );
 
-        Socket& EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize, IAsyncResult* asyncResult);
+        std::shared_ptr<Socket> EndAccept(
+            std::unique_ptr<BYTE> Buffer,
+            LPDWORD pReceiveSize,
+            std::shared_ptr<IAsyncResult> asyncResult
+        );
 
         void Bind(const struct sockaddr* name, int namelen);
 
         void CloseSocket(void);
 
-        IAsyncResult* BeginConnect(
+        std::shared_ptr<IAsyncResult> BeginConnect(
             _In_ const struct sockaddr* name,
             _In_ int namelen,
             _In_ const ASYNCCALLBACK& Callback,
@@ -54,7 +59,7 @@ namespace hxc
 
         void EndConnect(IAsyncResult* asyncResult);
 
-        IAsyncResult* BeginDisconnect(_In_ const ASYNCCALLBACK& Callback, _In_ DWORD_PTR Context);
+        std::shared_ptr<IAsyncResult> BeginDisconnect(_In_ const ASYNCCALLBACK& Callback, _In_ DWORD_PTR Context);
 
         void EndDisconnect(IAsyncResult* asyncResult);
 
@@ -68,7 +73,7 @@ namespace hxc
             _In_  DWORD cbOutBuffer
         );
 
-        IAsyncResult* BeginReceive(
+        std::shared_ptr<IAsyncResult> BeginReceive(
             _In_ LPBYTE pBuffer,
             _In_ DWORD cbBuffer,
             _Out_ LPDWORD lpdwFlags,
@@ -76,7 +81,7 @@ namespace hxc
             _In_ DWORD_PTR Context
         );
 
-        DWORD EndReceive(IAsyncResult* asyncResult);
+        DWORD EndReceive(std::shared_ptr<IAsyncResult> asyncResult);
 
         IAsyncResult* BeginReceiveFrom(
             _Inout_ LPBYTE lpBuffers,
@@ -88,17 +93,16 @@ namespace hxc
 
         DWORD EndReceiveFrom(IAsyncResult* asyncResult);
 
-        IAsyncResult* BeginSend(
-            _In_ const BYTE* lpBuffer,
-            _In_ DWORD cbBuffer,
+        std::shared_ptr<IAsyncResult> BeginSend(
+            _In_ const std::vector<BYTE>& Buffer,
             _In_ DWORD dwFlags,
             _In_ const ASYNCCALLBACK& Callback,
             _In_ DWORD_PTR Context
         );
 
-        DWORD EndSend(IAsyncResult* asyncResult);
+        DWORD EndSend(std::shared_ptr<IAsyncResult> asyncResult);
 
-        IAsyncResult* BeginSendTo(
+        std::shared_ptr<IAsyncResult> BeginSendTo(
             const BYTE* pBuffer,
             DWORD cbBuffer,
             DWORD dwFlags,
@@ -108,18 +112,20 @@ namespace hxc
             DWORD_PTR Context
         );
 
-        DWORD EndSendTo(IAsyncResult* asyncResult);
+        DWORD EndSendTo(std::shared_ptr<IAsyncResult> asyncResult);
 
         bool Poll(int microSeconds, SelectMode mode);
 
         void Shutdown(int how);
 #pragma endregion
 
-        inline operator SOCKET();
+        operator SOCKET() { return s; }
         static void InitializeWinsock(_In_ WORD wVersionRequested, _Out_ LPWSADATA lpWSAData);
         static void UninitializeWinsock();
 
     private:
+        Socket(const Socket&) { throw NotImplementedException(); }
+        Socket& operator=(const Socket&) { throw NotImplementedException(); }
         void UpdateStatusAfterSocketError(int errorCode);
 #pragma region PropertiesInternal
         int _AddressFamily;
@@ -138,7 +144,7 @@ namespace hxc
         ~TcpClient();
     public:
 #pragma region Properties
-        Socket& get__Client();
+        std::shared_ptr<Socket> get__Client();
         bool get__Connected();
 #pragma endregion
 #pragma region Methods
@@ -150,8 +156,7 @@ namespace hxc
         );
 
         Task SendAsync(
-            _In_ const LPBYTE lpBuffer,
-            _In_ DWORD dwBufferLen,
+            _In_ const std::vector<BYTE>& Buffer,
             _In_ DWORD dwFlags
         );
 
@@ -163,7 +168,7 @@ namespace hxc
 #pragma endregion
     private:
 #pragma region PropertiesInternal
-        Socket _Socket;
+        std::shared_ptr<Socket> _Socket;
 #pragma endregion
         CRITICAL_SECTION Lock;
     };
@@ -199,6 +204,63 @@ namespace hxc
         virtual void OnShutdown() {}
     };
 
+    template<typename _Elem>
+    class tcp_streambuf : public std::basic_streambuf<_Elem, std::char_traits<_Elem>>
+    {
+    public:
+        explicit tcp_streambuf(TcpClient& client) : _client(client)
+        {
+            _buffer_send.reset(new tcp_streambuf::char_type[BUFFER_SIZE]);
+            ZeroMemory(_buffer_send, BUFFER_SIZE * sizeof(typename tcp_streambuf::char_type));
+            setp(_buffer_send, _buffer_send + BUFFER_SIZE - 1);
+
+            _buffer_recv.reset(new tcp_streambuf::char_type[BUFFER_SIZE]);
+            ZeroMemory(_buffer_recv, BUFFER_SIZE * sizeof(typename tcp_streambuf::char_type));
+            setg(_buffer_recv, _buffer_recv + BUFFER_SIZE - 1);
+        }
+        virtual ~tcp_streambuf()
+        {
+            sync();
+        }
+    protected:
+        virtual int_type overflow(int_type ch)
+        {
+            if (ch != _Traits::eof())
+            {
+                *pptr() = ch;
+                pbump(1);
+            }
+
+            if (flush() == _Traits::eof())
+                return _Traits::eof();
+            return _Traits::not_eof();
+        }
+
+        virtual int sync()
+        {
+            if (flush() == _Traits::eof())
+                return -1;
+            return basic_streambuf::sync();
+        }
+    private:
+        int flush(void)
+        {
+            using namespace std;
+            vector<BYTE> data(
+                pbase(),
+                sizeof(tcp_streambuf::char_type) == sizeof(wchar_t) ?
+                    reinterpret_cast<BYTE*>((int)pptr() + 1) :
+                    pptr()
+            );
+            _client.SendAsync(data, 0).Wait(INFINITE);
+        }
+    private:
+        const int BUFFER_SIZE = 256;
+        std::unique_ptr<typename tcp_streambuf::char_type> _buffer_recv;
+        std::unique_ptr<typename tcp_streambuf::char_type> _buffer_send;
+
+        TcpClient& _client;
+    };
 
 };//namespace hxc
 

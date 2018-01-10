@@ -215,7 +215,7 @@
     <Content Include="resources\scripts\MainForm.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="resources\images\button.ico">
+    <None Include="resources\images\favicon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="resources\content\common.css">

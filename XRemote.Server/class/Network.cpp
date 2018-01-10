@@ -8,27 +8,38 @@ namespace hxc
 {
     class SocketAsyncResultImpl : public AsyncResultImpl
     {
-        Socket& _Socket;
-        std::function<void (void)> _InternalOperation;
-
     public:
-        SocketAsyncResultImpl(Socket&s, DWORD_PTR AsyncState, const ASYNCCALLBACK & callback) :
-            AsyncResultImpl(AsyncState, callback), _Socket(s), _InternalOperation(nullptr)
+        enum InternalOp_Type
+        {
+            Accept,
+            Connect,
+            Receive
+        };
+
+        SocketAsyncResultImpl(Socket&s, InternalOp_Type InternalOp, DWORD_PTR AsyncState, const ASYNCCALLBACK & callback) :
+            AsyncResultImpl(AsyncState, callback), _Socket(s), _InternalOperation(InternalOp)
         {
             
         }
-
-        void set__InternalOperation(const std::function<void(void)>& InternalOp)
-        {
-            _InternalOperation = InternalOp;
-        }
-
+    public:
         virtual void Complete(DWORD ErrCode, bool CompletedSynchronously)
         {
             _ErrorCode = SocketException::NTSTATUS_To_Win32Err((NTSTATUS)ErrCode);
 
-            if (_InternalOperation != nullptr)
-                _InternalOperation();
+            switch (_InternalOperation)
+            {
+            case SocketAsyncResultImpl::Accept:
+                AcceptInternalOp();
+                break;
+            case SocketAsyncResultImpl::Connect:
+                ConnectInternalOp();
+                break;
+            case SocketAsyncResultImpl::Receive:
+                ReceiveInternalOp();
+                break;
+            default:
+                break;
+            }
 
             AsyncResultImpl::Complete(_ErrorCode, CompletedSynchronously);
         }
@@ -104,7 +115,37 @@ namespace hxc
             {
             }
         }
+
+        void* operator new(size_t size)
+        {
+            free_elements.Lock();
+            if (free_elements->empty())
+            {
+                free_elements.Release();
+                return malloc(size);
+            }
+            void* p = *(free_elements->end());
+            free_elements->pop_back();
+            free_elements.Release();
+            return p;
+        }
+
+        void operator delete(void* p)
+        {
+            free_elements.Lock();
+            if (free_elements->size() > 20)
+                free(p);
+            else
+                free_elements->push_back(p);
+            free_elements.Release();
+        }
+    private:
+        static Critical_Section<std::vector<void*>> free_elements;
+        Socket& _Socket;
+        InternalOp_Type _InternalOperation;
     };
+
+    Critical_Section<std::vector<void*>>  SocketAsyncResultImpl::free_elements;
 
 Socket::Socket() :
     _AddressFamily(AF_INET), _Connected(false)
@@ -137,8 +178,14 @@ bool Socket::get__Connected()
     return _Connected ? true : false;
 }
 
-IAsyncResult * Socket::BeginAccept(Socket& AcceptSocket, DWORD receiveSize, const ASYNCCALLBACK & Callback, DWORD_PTR Context)
+std::shared_ptr<Socket> Socket::Create()
 {
+    return std::shared_ptr<Socket>(new Socket());
+}
+
+std::shared_ptr<IAsyncResult> Socket::BeginAccept(std::shared_ptr<Socket> AcceptSocket, DWORD receiveSize, const ASYNCCALLBACK & Callback, DWORD_PTR Context)
+{
+    using namespace std;
     _ASSERT(Socket::pfnAcceptEx != nullptr);
 
     const DWORD sizeAddr = sizeof(sockaddr_in) + 16;
@@ -149,15 +196,16 @@ IAsyncResult * Socket::BeginAccept(Socket& AcceptSocket, DWORD receiveSize, cons
         throw e;
     }
 
-    SocketAsyncResultImpl* ai = new SocketAsyncResultImpl(*this, Context, Callback);
+    auto ai = shared_ptr<SocketAsyncResultImpl>(
+        new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::Accept, Context, Callback)
+    );
     ai->get__InternalParams().push_back(reinterpret_cast<DWORD_PTR>(&AcceptSocket));
     ai->get__InternalParams().push_back(receiveSize);
     LPBYTE pBuffer = _DataPool::BufferPool().Pop();
     ai->get__InternalParams().push_back(reinterpret_cast<DWORD_PTR>(pBuffer));
-    ai->set__InternalOperation(std::bind(&SocketAsyncResultImpl::AcceptInternalOp, ai));
 
     DWORD dwBytesReceived = 0;
-    BOOL ret = Socket::pfnAcceptEx(this->s, (SOCKET)AcceptSocket, pBuffer, receiveSize, sizeAddr, sizeAddr, &dwBytesReceived, ai);
+    BOOL ret = Socket::pfnAcceptEx(this->s, (SOCKET)*AcceptSocket, pBuffer, receiveSize, sizeAddr, sizeAddr, &dwBytesReceived, ai);
     int code = ::WSAGetLastError();
     if (ret)
     {
@@ -176,7 +224,7 @@ IAsyncResult * Socket::BeginAccept(Socket& AcceptSocket, DWORD receiveSize, cons
     return ai;
 }
 
-Socket & Socket::EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize, IAsyncResult * asyncResult)
+std::shared_ptr<Socket> Socket::EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize, IAsyncResult * asyncResult)
 {
     if (!ppArray || !pReceiveSize)
     {
@@ -192,7 +240,7 @@ Socket & Socket::EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize, IAsyncResult *
     *pReceiveSize = async->get__InternalParams()[1];
     *ppArray = reinterpret_cast<LPBYTE>(async->get__InternalParams()[2]);
 
-    return *(reinterpret_cast<Socket*>(ptr));
+    return std::shared_ptr<Socket>(reinterpret_cast<Socket*>(ptr));
 }
 
 void Socket::Bind(const struct sockaddr* name, int namelen)
@@ -399,18 +447,18 @@ DWORD Socket::EndReceive(IAsyncResult * asyncResult)
     return cbTransfer;
 }
 
-IAsyncResult * Socket::BeginSend(
-    const BYTE * lpBuffer,
-    DWORD cbBuffer,
+std::shared_ptr<IAsyncResult> Socket::BeginSend(
+    const std::vector<BYTE>& Buffer,
     DWORD dwFlags,
     const ASYNCCALLBACK & Callback,
     DWORD_PTR Context
 )
 {
-    SocketAsyncResultImpl* ai = new SocketAsyncResultImpl(*this, Context, Callback);
+    using namespace std;
+    auto ai = shared_ptr<SocketAsyncResultImpl>(new SocketAsyncResultImpl(*this, Context, Callback));
 
-    WSABUF buf = { cbBuffer, (char*)lpBuffer };
-    int retval = ::WSASend(this->s, &buf, 1, nullptr, dwFlags, ai, nullptr);
+    WSABUF buf = { Buffer.size(), (CHAR*)(&*Buffer.begin()) };
+    int retval = ::WSASend(this->s, &buf, 1, nullptr, dwFlags, ai.get(), nullptr);
     int code = WSAGetLastError();
     if (retval == 0)
     {
@@ -421,22 +469,24 @@ IAsyncResult * Socket::BeginSend(
         CHAR Err[100] = {};
         StringCchPrintfA(Err, 100, "%s() failed.\r\nWSAGetLastError()==%i\r\n", __FUNCTION__, code);
         ::OutputDebugStringA(Err);
-        delete ai;
+        ai.reset();
         UpdateStatusAfterSocketError(code);
         SocketException e(code);
         SET_EXCEPTION(e);
         throw e;
     }
-    return ai;
+    return static_pointer_cast<IAsyncResult>(ai);
 }
 
-DWORD Socket::EndSend(IAsyncResult * asyncResult)
+DWORD Socket::EndSend(std::shared_ptr<IAsyncResult> asyncResult)
 {
-    SocketAsyncResultImpl* async = static_cast<SocketAsyncResultImpl*>(asyncResult);
+    using namespace std;
+
+    shared_ptr<SocketAsyncResultImpl> async = static_pointer_cast<SocketAsyncResultImpl>(asyncResult);
     async->WaitForCompletion();
 
     DWORD cbTransfer = 0, dwFlags = 0;
-    ::WSAGetOverlappedResult(s, async, &cbTransfer, TRUE, &dwFlags);
+    ::WSAGetOverlappedResult(s, async.get(), &cbTransfer, TRUE, &dwFlags);
     return cbTransfer;
 }
 
@@ -529,11 +579,6 @@ bool Socket::Poll(int microSeconds, SelectMode mode)
     return set.fd_count != 0 && set.fd_array[0] == s;
 }
 
-inline Socket::operator SOCKET()
-{
-    return this->s;
-}
-
 LPFN_ACCEPTEX Socket::pfnAcceptEx;
 LPFN_CONNECTEX Socket::pfnConnectEx;
 LPFN_DISCONNECTEX Socket::pfnDisconnectEx;
@@ -604,14 +649,14 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
 
     hxc::Critical_Section<std::map<SOCKET, Socket*>> AcceptSockets;
 
-    TcpClient::TcpClient() : _Socket()
+    TcpClient::TcpClient() : _Socket(Socket::Create())
     {
         InitializeCriticalSection(&Lock);
 
         sockaddr_in sock = {};
         sock.sin_family = AF_INET;
         //sock.sin_addr.S_un.S_addr = INADDR_ANY;
-        _Socket.Bind(reinterpret_cast<sockaddr*>(&sock), sizeof(sockaddr_in));
+        _Socket->Bind(reinterpret_cast<sockaddr*>(&sock), sizeof(sockaddr_in));
     }
 
     TcpClient::~TcpClient()
@@ -620,11 +665,11 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
         DeleteCriticalSection(&Lock);
     }
 
-    Socket & TcpClient::get__Client() { return _Socket; }
+    std::shared_ptr<Socket> TcpClient::get__Client() { return _Socket; }
 
     bool TcpClient::get__Connected()
     {
-        return _Socket.get__Connected();
+        return _Socket->get__Connected();
     }
 
     void TcpClient::Close(void)
@@ -633,14 +678,14 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
         {
             
         };
-        if (_Socket.get__Connected())
+        if (_Socket->get__Connected())
         {
             /*IAsyncResult* pi = _Socket.Disconnect(callback);
             WaitForSingleObject(pi->get__AsyncWaitHandle(), INFINITE);
             CloseHandle(pi->get__AsyncWaitHandle());
             delete pi;*/
         }
-        _Socket.CloseSocket();
+        _Socket->CloseSocket();
     }
 
     Task TcpClient::ConnectAsync(
@@ -649,24 +694,26 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
     )
     {
         sockaddr_in addr = {};
-        addr.sin_family = _Socket.get__AddressFamily();
+        addr.sin_family = _Socket->get__AddressFamily();
         addr.sin_port = htons(RemotePort);
         InetPtonW(addr.sin_family, RemoteIP.c_str(), &addr.sin_addr);
-        IAsyncResult* ai =  _Socket.BeginConnect((sockaddr*)&addr, sizeof(sockaddr_in), nullptr, NULL);
+        IAsyncResult* ai =  _Socket->BeginConnect((sockaddr*)&addr, sizeof(sockaddr_in), nullptr, NULL);
         auto endMethod = std::bind(&Socket::EndConnect, _Socket, std::placeholders::_1);
         return Task::FromAsync(ai, endMethod);
     }
 
     Task TcpClient::SendAsync(
-        const LPBYTE lpBuffer,
-        DWORD dwBufferLen,
+        const std::vector<BYTE>& Buffer,
         DWORD dwFlags
     )
     {
-        IAsyncResult* ai = _Socket.BeginSend(lpBuffer, dwBufferLen, dwFlags, nullptr, NULL);
-        auto endMethod = [this](IAsyncResult* async)
+        using namespace std;
+
+        auto ai = _Socket->BeginSend(Buffer, dwFlags, nullptr, NULL);
+        auto endMethod = [this](shared_ptr<IAsyncResult> async)
         {
-            return static_cast<DWORD_PTR>(_Socket.EndSend(async));
+            DWORD_PTR ret = static_cast<DWORD_PTR>(_Socket->EndSend(async));
+            return ret;
         };
         return Task::FromAsync1(ai, endMethod);
     }
@@ -677,10 +724,10 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
         LPDWORD lpdwFlags
     )
     {
-        IAsyncResult* ai = _Socket.BeginReceive(pBuffer, cbBuffer, lpdwFlags, nullptr, NULL);
+        IAsyncResult* ai = _Socket->BeginReceive(pBuffer, cbBuffer, lpdwFlags, nullptr, NULL);
         auto endMethod = [this](IAsyncResult* async)
         {
-            return static_cast<DWORD_PTR>(_Socket.EndReceive(async));
+            return static_cast<DWORD_PTR>(_Socket->EndReceive(async));
         };
         return Task::FromAsync1(ai, endMethod);
     }

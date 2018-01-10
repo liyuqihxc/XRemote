@@ -171,13 +171,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ClassFactoryStub.h" />
+    <ClInclude Include="ClassFactoryImpl.h" />
     <ClInclude Include="class\Crypt.h" />
     <ClInclude Include="class\Environment.h" />
     <ClInclude Include="class\Event.h" />
     <ClInclude Include="class\Exceptions.h" />
     <ClInclude Include="class\hxc.h" />
     <ClInclude Include="class\Locks.h" />
+    <ClInclude Include="class\MemoryStream.h" />
     <ClInclude Include="class\Network.h" />
     <ClInclude Include="class\Pool.h" />
     <ClInclude Include="class\ProxyStub.h" />
@@ -200,7 +201,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ClassFactoryStub.cpp" />
+    <ClCompile Include="ClassFactoryImpl.cpp" />
     <ClCompile Include="class\AsyncResultImpl.cpp" />
     <ClCompile Include="class\Crypt.cpp" />
     <ClCompile Include="class\Environment.cpp" />

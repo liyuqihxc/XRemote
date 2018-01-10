@@ -1,5 +1,7 @@
 #pragma once
-#include "ClassFactoryStub.h"
+
+#include "ClassFactoryImpl.h"
+
 #if !defined _NETWORKMANAGER_H_
 #define _NETWORKMANAGER_H_
 
@@ -15,8 +17,8 @@ private:
     static DWORD_PTR EstablishConnection(DWORD_PTR Param);
 private:
     static hxc::TcpClient _Connection;
-    static hxc::CStub<ClassFactoryStub>* _ClassFactoryStub;
-    static hxc::Task* _EstablishConnectionTask;
+    static std::unique_ptr<hxc::CStub<ClassFactoryImpl>> _ClassFactoryStub;
+    static std::unique_ptr<hxc::Task> _EstablishConnectionTask;
     static HANDLE _EventStop;
 };
 

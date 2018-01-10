@@ -3,6 +3,7 @@
 #ifndef _HXC_H_
 #define _HXC_H_
 
+#include <memory>
 #include <list>
 #include <vector>
 #include <map>
@@ -28,7 +29,7 @@ namespace hxc
         virtual bool get__IsCompleted() = 0;
     };
 
-    typedef std::function<void(IAsyncResult*)> ASYNCCALLBACK;
+    typedef std::function<void(std::shared_ptr<IAsyncResult>)> ASYNCCALLBACK;
 
     class AsyncResultImpl :
         public IAsyncResult,
@@ -58,6 +59,7 @@ namespace hxc
         virtual void WaitForCompletion(void);
 
         std::vector<DWORD_PTR>& get__InternalParams(void);
+
     public:
         virtual DWORD_PTR get__AsyncState();
         virtual HANDLE get__AsyncWaitHandle();
@@ -71,6 +73,7 @@ namespace hxc
 #include "Locks.h"
 #include "Event.h"
 #include "stdTrunk.hpp"
+#include "MemoryStream.h"
 #include "Environment.h"
 #include "Crypt.h"
 #include "Pool.h"

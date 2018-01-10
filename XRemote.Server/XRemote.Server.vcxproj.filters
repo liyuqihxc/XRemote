@@ -84,13 +84,16 @@
     <ClInclude Include="RPC.pb.h">
       <Filter>生成的文件</Filter>
     </ClInclude>
-    <ClInclude Include="ClassFactoryStub.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="NetworkManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="class\Tasks.h">
+      <Filter>class</Filter>
+    </ClInclude>
+    <ClInclude Include="ClassFactoryImpl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="class\MemoryStream.h">
       <Filter>class</Filter>
     </ClInclude>
   </ItemGroup>
@@ -137,9 +140,6 @@
     <ClCompile Include="RPC.pb.cc">
       <Filter>生成的文件</Filter>
     </ClCompile>
-    <ClCompile Include="ClassFactoryStub.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="class\Tasks.cpp">
       <Filter>class</Filter>
     </ClCompile>
@@ -154,6 +154,9 @@
     </ClCompile>
     <ClCompile Include="class\MemoryStream.cpp">
       <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassFactoryImpl.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

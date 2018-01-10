@@ -3,8 +3,8 @@
 #include "NetworkManager.h"
 
 hxc::TcpClient NetworkManager::_Connection;
-hxc::CStub<ClassFactoryStub>* NetworkManager::_ClassFactoryStub;
-hxc::Task* NetworkManager::_EstablishConnectionTask;
+std::unique_ptr<hxc::CStub<ClassFactoryImpl>> NetworkManager::_ClassFactoryStub;
+std::unique_ptr<hxc::Task> NetworkManager::_EstablishConnectionTask;
 HANDLE NetworkManager::_EventStop;
 
 DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param)
@@ -17,30 +17,33 @@ DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param)
         }
         catch (const hxc::Exception&)
         {
-            ::Sleep(10000);
+            ::Sleep(1000);
             continue;
         }
 
-        hxc::CStub<ClassFactoryStub>::CreateInstance(_Connection, reinterpret_cast<void**>(&_ClassFactoryStub));
+        hxc::CStub<ClassFactoryImpl>::CreateInstance(_Connection, reinterpret_cast<void**>(&_ClassFactoryStub));
 
+        SOCKET s = (SOCKET)*_Connection.get__Client();
         WSAEVENT hClose = ::WSACreateEvent();
-        ::WSAEventSelect((SOCKET)_Connection.get__Client(), hClose, FD_CLOSE);
+        ::WSAEventSelect(s, hClose, FD_CLOSE);
         HANDLE h[2] = { _EventStop, hClose };
         DWORD wait = ::WSAWaitForMultipleEvents(2, h, FALSE, WSA_INFINITE, FALSE);
-        if (wait == WSA_WAIT_EVENT_0)
+        if (wait == WSA_WAIT_EVENT_0)// ÍË³ö
         {
             ::WSACloseEvent(hClose);
             break;
         }
 
         WSANETWORKEVENTS events = {};
-        ::WSAEnumNetworkEvents((SOCKET)_Connection.get__Client(), hClose, &events);
+        ::WSAEnumNetworkEvents(s, hClose, &events);
         int err = events.iErrorCode[FD_CLOSE_BIT];
         ::WSACloseEvent(hClose);
 
-        hxc::IAsyncResult* async = _Connection.get__Client().BeginDisconnect(nullptr, NULL);
-        _Connection.get__Client().EndDisconnect(async);
+        hxc::IAsyncResult* async = _Connection.get__Client()->BeginDisconnect(nullptr, NULL);
+        _Connection.get__Client()->EndDisconnect(async);
         delete async;
+
+        _ClassFactoryStub = nullptr;
     }
 
     return 0;
@@ -50,7 +53,7 @@ void NetworkManager::Start()
 {
     _EventStop = hxc::_DataPool::ManualResetEventPool().Pop();
 
-    _EstablishConnectionTask = new hxc::Task(&EstablishConnection, NULL, WT_EXECUTEINLONGTHREAD);
+    _EstablishConnectionTask.reset(new hxc::Task(&EstablishConnection, NULL, WT_EXECUTEINLONGTHREAD));
 
     _EstablishConnectionTask->Wait(INFINITE);
 }

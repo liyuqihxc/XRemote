@@ -23,58 +23,55 @@ namespace hxc
             if (InitNum < 0 && MaxFreeNum < 0)
                 throw ArgumentException();
 
-            ZeroMemory(&m_Lock, sizeof(CRITICAL_SECTION));
-            InitializeCriticalSection(&m_Lock);
-
             for (int i = 0; i < InitNum; i++)
             {
                 Type t = m_Construct();
                 if (m_ResetState != nullptr)
                     m_ResetState(t);
-                m_Pool.push(t);
+                m_Pool->push(t);
             }
         }
 
         ~ObjectPool()
         {
-            DeleteCriticalSection(&m_Lock);
-
-            while (m_Pool.size() != 0)
+            while (m_Pool->size() != 0)
             {
-                m_Destruct(m_Pool.top());
-                m_Pool.pop();
+                m_Destruct(m_Pool->top());
+                m_Pool->pop();
             }
         }
 
         void Push(Type t)
         {
-            if (m_ResetState != nullptr)
-                m_ResetState(t);
-            m_Pool.push(t);
-            
-            int free = m_Pool.size() - m_MaxFreeNum;
-            for (int i = 0; i < free; i++)
+            m_Pool.Lock();
+            if ((int)m_Pool->size() >= m_MaxFreeNum)
             {
-                m_Destruct(m_Pool.top());
-                m_Pool.pop();
+                m_Destruct(t);
             }
+            else
+            {
+                if (m_ResetState != nullptr)
+                    m_ResetState(t);
+                m_Pool->push(t);
+            }
+            m_Pool.Release();
         }
 
         Type Pop(void)
         {
             Type t;
 
-            if (m_Pool.size() == 0)
+            m_Pool.Lock();
+            if (m_Pool->size() == 0)
             {
                 t = m_Construct();
-                if (m_ResetState != nullptr)
-                    m_ResetState(t);
             }
             else
             {
-                t = m_Pool.top();
-                m_Pool.pop();
+                t = m_Pool->top();
+                m_Pool->pop();
             }
+            m_Pool.Release();
 
             return t;
         }
@@ -84,8 +81,7 @@ namespace hxc
         ResetState m_ResetState;
         Destruct m_Destruct;
         int m_MaxFreeNum;
-        std::stack<Type> m_Pool;
-        CRITICAL_SECTION m_Lock;
+        Critical_Section<std::stack<Type>> m_Pool;
     };
 
     class _DataPool

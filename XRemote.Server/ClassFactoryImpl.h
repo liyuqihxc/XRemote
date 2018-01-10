@@ -3,7 +3,7 @@
 #if !defined _CLASSFACTORYSTUB_H_
 #define _CLASSFACTORYSTUB_H_
 
-class ClassFactoryStub :
+class ClassFactoryImpl :
     public hxc::IDispatchImpl<IRemoteClassFactory>
 {
 public:
@@ -13,7 +13,7 @@ public:
         );
     STDMETHOD(LockServer)(BOOL fLock);
 protected:
-    typedef hxc::CStub<ClassFactoryStub> _thisclass;
+    typedef hxc::CStub<ClassFactoryImpl> _thisclass;
     typedef struct _Interface_Entry
     {
         const IID* riid;
