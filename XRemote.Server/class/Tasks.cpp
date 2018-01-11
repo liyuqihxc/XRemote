@@ -17,6 +17,7 @@ hxc::Task& hxc::Task::operator=(const Task & t)
 {
     if (this != &t)
     {
+        m_pTaskContext->Release();
         m_pTaskContext = t.m_pTaskContext;
         m_pTaskContext->AddRef();
     }
@@ -48,34 +49,34 @@ void hxc::Task::Wait(DWORD millisecondsTimeout)
     m_pTaskContext->Wait(millisecondsTimeout);
 }
 
-hxc::Task hxc::Task::FromAsync(IAsyncResult * asyncResult, const ASYNCCALLBACK& endMethod, ULONG Flags)
+hxc::Task hxc::Task::FromAsync(std::shared_ptr<IAsyncResult> asyncResult, const ASYNCCALLBACK& endMethod, ULONG Flags)
 {
+    using namespace std;
+
     ASYNCCALLBACK end(endMethod);
     Task t([end](DWORD_PTR Param)
     {
-        IAsyncResult* async = reinterpret_cast<IAsyncResult*>(Param);
-        end(async);
+        auto* async = reinterpret_cast<shared_ptr<IAsyncResult>*>(Param);
+        end(*async);
         delete async;
         return 0;
-    }, reinterpret_cast<DWORD_PTR>(asyncResult), Flags);
+    }, reinterpret_cast<DWORD_PTR>(new shared_ptr<IAsyncResult>(asyncResult)), Flags);
     return t;
 }
 
-hxc::Task hxc::Task::FromAsync1(IAsyncResult * asyncResult, const std::function<DWORD_PTR(IAsyncResult*)>& endMethod, ULONG Flags)
+hxc::Task hxc::Task::FromAsync1(std::shared_ptr<IAsyncResult> asyncResult, const std::function<DWORD_PTR(std::shared_ptr<IAsyncResult>)>& endMethod, ULONG Flags)
 {
-    std::function<DWORD_PTR(IAsyncResult*)> end(endMethod);
+    using namespace std;
+
+    function<DWORD_PTR(shared_ptr<IAsyncResult>)> end(endMethod);
     Task t([end](DWORD_PTR Param)
     {
-        IAsyncResult* async = reinterpret_cast<IAsyncResult*>(Param);
-        DWORD_PTR ret = end(async);
+        auto* async = reinterpret_cast<shared_ptr<IAsyncResult>*>(Param);
+        DWORD_PTR ret = end(*async);
         delete async;
         return ret;
-    }, reinterpret_cast<DWORD_PTR>(asyncResult), Flags);
+    }, reinterpret_cast<DWORD_PTR>(new shared_ptr<IAsyncResult>(asyncResult)), Flags);
     return t;
-}
-
-hxc::Task::Task() : m_pTaskContext(nullptr)
-{
 }
 
 DWORD WINAPI hxc::Task::_TaskContext::ThreadPoolCallback(PVOID Param)

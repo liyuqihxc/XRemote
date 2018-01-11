@@ -38,7 +38,7 @@ void hxc::AsyncResultImpl::Complete(DWORD ErrCode, bool CompletedSynchronously)
     {
         try
         {
-            _Callback(static_cast<IAsyncResult*>(this));
+            _Callback(shared_from_this());
         }
         catch (const Exception&)
         {

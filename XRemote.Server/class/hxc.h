@@ -33,7 +33,8 @@ namespace hxc
 
     class AsyncResultImpl :
         public IAsyncResult,
-        public OVERLAPPED
+        public OVERLAPPED,
+        public std::enable_shared_from_this<AsyncResultImpl>
     {
     protected:
         DWORD_PTR _AsyncState;

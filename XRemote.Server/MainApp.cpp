@@ -52,6 +52,11 @@ void MainApp::OnStop()
 
 int _tmain(int argc, char *argv[])
 {
+    hxc::_DataPool::Initialize();
+
     NetworkManager::Start();
+
+    Sleep(1000);
+    hxc::_DataPool::Free();
     return 0;
 }

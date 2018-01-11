@@ -10,26 +10,6 @@
 
 namespace hxc
 {
-    class QueueBuffer
-    {
-    public:
-        QueueBuffer();
-        ~QueueBuffer();
-        void Lock(void);
-        void Write(const BYTE* pNewData, int Length);
-        void SynchronizedWrite(const BYTE* pNewData, int Length);
-        int ReadOut(BYTE*pBuff, int Length);
-        void Release(void);
-        int Peek(BYTE*pBuff, int Length);
-        unsigned long get__Length(void);
-    private:
-        BYTE* CurrentBuffer;
-        long CurrentBufferIndex;
-        long HeadIndex;// Buffer头索引
-        std::list<BYTE*> Buffers_Filled;
-        CRITICAL_SECTION m_Lock;
-    };
-
     class _TypeInfoHolder
     {
     public:
@@ -150,13 +130,19 @@ namespace hxc
     class CStub :
         public T
     {
-        CStub() {}
-        explicit CStub(TcpClient& socket) : _ControlSock(socket), _RefCount(0), _EventStop(hxc::_DataPool::ManualResetEventPool().Pop()) {}
+        CStub() = delete;
+        explicit CStub(TcpClient& socket) : _ControlSock(socket), _RefCount(0), _EventStop(hxc::_DataPool::ManualResetEventPool().Pop()),
+            _ReceiveTask(std::bind(&OnReceive, std::placeholders::_1), reinterpret_cast<DWORD_PTR>(this), WT_EXECUTEINLONGTHREAD)
+        {
+        }
     public:
         ~CStub()
         {
             CStub::FinalRelease();
         }
+
+        CStub(const CStub&) = delete;
+        CStub& operator=(const CStub&) = delete;
 
         HRESULT FinalConstruct()
         {
@@ -192,14 +178,13 @@ namespace hxc
 
             CStub* pret = new CStub(tcpClient);
 
-            pret->_ReceiveTask = new Task(std::bind(&OnReceive, std::placeholders::_1), reinterpret_cast<DWORD_PTR>(pret), WT_EXECUTEINLONGTHREAD);
-
             HRESULT hres = pret->CStub::FinalConstruct();
             if (FAILED(hres))
             {
                 pret->Release();
                 return hres;
             }
+            pret->_ReceiveTask.Start();
             *ppv = pret;
 
             pret->AddRef();//因为引用计数初始值为0
@@ -247,20 +232,18 @@ namespace hxc
         static DWORD_PTR OnReceive(DWORD_PTR Param)
         {
             using namespace hxc;
+            using namespace std;
 
             CStub* pThis = reinterpret_cast<CStub*>(Param);
             LPBYTE pBuffer = _DataPool::BufferPool().Pop();
+            tcp_stream<BYTE> stream(pThis->_ControlSock);
 
             while (::WaitForSingleObject(pThis->_EventStop, 0) == WAIT_TIMEOUT)
             {
                 try
                 {
-                    DWORD dwFlags = 0;
-                    Task t = pThis->_ControlSock.ReceiveAsync(pBuffer, _DataPool::BufferSize, &dwFlags);
-                    t.Wait(INFINITE);
-                    DWORD cbTransfer = t.get_Result();
-                    pThis->ReceiveBuffer.SynchronizedWrite(pBuffer, cbTransfer);
-                    pThis->ProcessData();
+                    auto recv_size = stream.readsome(pBuffer, streamsize(_DataPool::BufferSize));
+                    recv_size = 0;
                 }
                 catch (const Exception&)
                 {
@@ -273,7 +256,7 @@ namespace hxc
             return 0;
         }
 
-        virtual void ProcessData(void)
+        void ProcessData(void)
         {
         }
 
@@ -282,8 +265,7 @@ namespace hxc
         USHORT _RemotePort;
         volatile long _RefCount;
         TcpClient& _ControlSock;
-        QueueBuffer ReceiveBuffer;
-        Task* _ReceiveTask;
+        Task _ReceiveTask;
         HANDLE _EventStop;
     };
 

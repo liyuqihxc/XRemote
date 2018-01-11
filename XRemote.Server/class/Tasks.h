@@ -20,6 +20,7 @@ namespace hxc
     public:
         typedef std::function<DWORD_PTR(DWORD_PTR)> FUNCTION;
 
+        Task() = delete;
         Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags = WT_EXECUTEDEFAULT);
         Task(const Task& t);
         Task& operator=(const Task& t);
@@ -33,18 +34,17 @@ namespace hxc
         static void WaitAll(const std::vector<Task>& tasks, int millisecondsTimeout);
         static int WaitAny(const std::vector<Task>& tasks, int millisecondsTimeout);
         static Task FromAsync(
-            IAsyncResult* asyncResult,
+            std::shared_ptr<IAsyncResult> asyncResult,
             const ASYNCCALLBACK& endMethod,
             ULONG Flags = WT_EXECUTEDEFAULT
         );
         static Task FromAsync1(
-            IAsyncResult* asyncResult,
-            const std::function<DWORD_PTR(IAsyncResult*)>& endMethod,
+            std::shared_ptr<IAsyncResult> asyncResult,
+            const std::function<DWORD_PTR(std::shared_ptr<IAsyncResult>)>& endMethod,
             ULONG Flags = WT_EXECUTEDEFAULT
         );
 
     private:
-        Task();
         std::vector<DWORD_PTR>& get_InternalParams();
 
         typedef class _TaskContext

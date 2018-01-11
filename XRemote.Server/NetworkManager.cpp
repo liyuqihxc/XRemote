@@ -23,7 +23,7 @@ DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param)
 
         hxc::CStub<ClassFactoryImpl>::CreateInstance(_Connection, reinterpret_cast<void**>(&_ClassFactoryStub));
 
-        SOCKET s = (SOCKET)*_Connection.get__Client();
+        SOCKET s = _Connection.get__Client()->get__Handle();
         WSAEVENT hClose = ::WSACreateEvent();
         ::WSAEventSelect(s, hClose, FD_CLOSE);
         HANDLE h[2] = { _EventStop, hClose };
@@ -39,9 +39,8 @@ DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param)
         int err = events.iErrorCode[FD_CLOSE_BIT];
         ::WSACloseEvent(hClose);
 
-        hxc::IAsyncResult* async = _Connection.get__Client()->BeginDisconnect(nullptr, NULL);
+        auto async = _Connection.get__Client()->BeginDisconnect(nullptr, NULL);
         _Connection.get__Client()->EndDisconnect(async);
-        delete async;
 
         _ClassFactoryStub = nullptr;
     }

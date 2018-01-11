@@ -13,7 +13,9 @@ namespace hxc
         {
             Accept,
             Connect,
-            Receive
+            DisConnect,
+            Receive,
+            Send
         };
 
         SocketAsyncResultImpl(Socket&s, InternalOp_Type InternalOp, DWORD_PTR AsyncState, const ASYNCCALLBACK & callback) :
@@ -67,13 +69,14 @@ namespace hxc
             if (get__ErrorCode() == ERROR_SUCCESS)
             {
                 DWORD cbTransfer = 0, dwFlags = 0;
-                ::WSAGetOverlappedResult((SOCKET)_Socket, this, &cbTransfer, TRUE, &dwFlags);
+                ::WSAGetOverlappedResult(_Socket.get__Handle(), this, &cbTransfer, TRUE, &dwFlags);
 
-                Socket* s =  reinterpret_cast<Socket*>(get__InternalParams()[0]);
-                ::setsockopt((SOCKET)*s, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
-                    reinterpret_cast<char*>((SOCKET)_Socket), sizeof(SOCKET));
+                std::shared_ptr<Socket>* s =  reinterpret_cast<std::shared_ptr<Socket>*>(get__InternalParams()[0]);
+                std::shared_ptr<Socket> socket(*s);
+                ::setsockopt(socket->get__Handle(), SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                    reinterpret_cast<char*>(_Socket.get__Handle()), sizeof(SOCKET));
 
-                InterlockedCompareExchange(&s->_Connected, 1, 0);
+                InterlockedCompareExchange(&socket->_Connected, 1, 0);
 
                 PDWORD_PTR pdwSizeTransfered = &get__InternalParams()[1];
 
@@ -95,7 +98,7 @@ namespace hxc
         {
             if (get__ErrorCode() == ERROR_SUCCESS)
             {
-                ::setsockopt((SOCKET)_Socket, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, nullptr, 0);
+                ::setsockopt(_Socket.get__Handle(), SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, nullptr, 0);
                 InterlockedCompareExchange(&_Socket._Connected, 1, 0);
             }
         }
@@ -105,7 +108,7 @@ namespace hxc
             if (get__ErrorCode() != ERROR_SUCCESS)
             {
                 DWORD cbTransfer = 0, dwFlags = 0;
-                ::WSAGetOverlappedResult((SOCKET)_Socket, this, &cbTransfer, TRUE, &dwFlags);
+                ::WSAGetOverlappedResult(_Socket.get__Handle(), this, &cbTransfer, TRUE, &dwFlags);
 
                 LPDWORD lpdwFlags = reinterpret_cast<LPDWORD>(get__InternalParams()[0]);
                 *lpdwFlags = dwFlags;
@@ -199,13 +202,13 @@ std::shared_ptr<IAsyncResult> Socket::BeginAccept(std::shared_ptr<Socket> Accept
     auto ai = shared_ptr<SocketAsyncResultImpl>(
         new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::Accept, Context, Callback)
     );
-    ai->get__InternalParams().push_back(reinterpret_cast<DWORD_PTR>(&AcceptSocket));
+    ai->get__InternalParams().push_back(reinterpret_cast<DWORD_PTR>(new shared_ptr<Socket>(AcceptSocket)));
     ai->get__InternalParams().push_back(receiveSize);
     LPBYTE pBuffer = _DataPool::BufferPool().Pop();
     ai->get__InternalParams().push_back(reinterpret_cast<DWORD_PTR>(pBuffer));
 
     DWORD dwBytesReceived = 0;
-    BOOL ret = Socket::pfnAcceptEx(this->s, (SOCKET)*AcceptSocket, pBuffer, receiveSize, sizeAddr, sizeAddr, &dwBytesReceived, ai);
+    BOOL ret = Socket::pfnAcceptEx(this->s, AcceptSocket->get__Handle(), pBuffer, receiveSize, sizeAddr, sizeAddr, &dwBytesReceived, ai.get());
     int code = ::WSAGetLastError();
     if (ret)
     {
@@ -216,16 +219,18 @@ std::shared_ptr<IAsyncResult> Socket::BeginAccept(std::shared_ptr<Socket> Accept
         CHAR Err[100] = {};
         StringCchPrintfA(Err, 100, "%s() failed.\r\nWSAGetLastError()==%i\r\n", __FUNCTION__, code);
         ::OutputDebugStringA(Err);
-        delete ai;
+        ai.reset();
         SocketException e(code);
         SET_EXCEPTION(e);
         throw e;
     }
-    return ai;
+    return static_pointer_cast<IAsyncResult>(ai);
 }
 
-std::shared_ptr<Socket> Socket::EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize, IAsyncResult * asyncResult)
+std::shared_ptr<Socket> Socket::EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize, std::shared_ptr<IAsyncResult> asyncResult)
 {
+    using namespace std;
+
     if (!ppArray || !pReceiveSize)
     {
         NullReferenceException e;
@@ -233,14 +238,16 @@ std::shared_ptr<Socket> Socket::EndAccept(LPBYTE* ppArray, LPDWORD pReceiveSize,
         throw e;
     }
 
-    SocketAsyncResultImpl* async = static_cast<SocketAsyncResultImpl*>(asyncResult);
+    auto async = static_pointer_cast<SocketAsyncResultImpl>(asyncResult);
 
     async->WaitForCompletion();
-    DWORD_PTR ptr = async->get__InternalParams()[0];
+    auto ptr = reinterpret_cast<shared_ptr<Socket>*>(async->get__InternalParams()[0]);
     *pReceiveSize = async->get__InternalParams()[1];
     *ppArray = reinterpret_cast<LPBYTE>(async->get__InternalParams()[2]);
+    shared_ptr<Socket> temp(*ptr);
+    delete ptr;
 
-    return std::shared_ptr<Socket>(reinterpret_cast<Socket*>(ptr));
+    return std::shared_ptr<Socket>(temp);
 }
 
 void Socket::Bind(const struct sockaddr* name, int namelen)
@@ -265,25 +272,27 @@ void Socket::CloseSocket(void)
     {
         Shutdown(SD_BOTH);
         CancelIo((HANDLE)s);
-        IAsyncResult* async = BeginDisconnect(nullptr, NULL);
+        auto async = BeginDisconnect(nullptr, NULL);
         EndDisconnect(async);
-        delete async;
         _DataPool::TCPSocketPool().Push(s);
         s = INVALID_SOCKET;
     }
 }
 
-IAsyncResult * Socket::BeginConnect(
+std::shared_ptr<IAsyncResult> Socket::BeginConnect(
     const struct sockaddr* name,
     int namelen,
     const ASYNCCALLBACK& Callback,
     DWORD_PTR Context
 )
 {
-    SocketAsyncResultImpl* ai = new SocketAsyncResultImpl(*this, Context, Callback);
-    ai->set__InternalOperation(std::bind(&SocketAsyncResultImpl::ConnectInternalOp, ai));
+    using namespace std;
 
-    BOOL ret = Socket::pfnConnectEx(s, name, namelen, nullptr, 0, nullptr, ai);
+    auto ai = shared_ptr<SocketAsyncResultImpl>(
+        new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::Connect, Context, Callback)
+    );
+
+    BOOL ret = Socket::pfnConnectEx(s, name, namelen, nullptr, 0, nullptr, ai.get());
     int code = WSAGetLastError();
     if (ret)
     {
@@ -294,25 +303,28 @@ IAsyncResult * Socket::BeginConnect(
         CHAR Err[100] = {};
         StringCchPrintfA(Err, 100, "%s() failed.\r\nWSAGetLastError()==%i\r\n", __FUNCTION__, code);
         ::OutputDebugStringA(Err);
-        delete ai;
+        ai.reset();
         SocketException e(code);
         SET_EXCEPTION(e);
         throw e;
     }
-    return ai;
+    return static_pointer_cast<IAsyncResult>(ai);
 }
 
-void Socket::EndConnect(IAsyncResult * asyncResult)
+inline void Socket::EndConnect(std::shared_ptr<IAsyncResult> asyncResult)
 {
-    SocketAsyncResultImpl* async = static_cast<SocketAsyncResultImpl*>(asyncResult);
-    async->WaitForCompletion();
+    std::static_pointer_cast<SocketAsyncResultImpl>(asyncResult)->WaitForCompletion();
 }
 
-IAsyncResult * Socket::BeginDisconnect(const ASYNCCALLBACK& Callback, DWORD_PTR Context)
+std::shared_ptr<IAsyncResult> Socket::BeginDisconnect(const ASYNCCALLBACK& Callback, DWORD_PTR Context)
 {
-    SocketAsyncResultImpl* ai = new SocketAsyncResultImpl(*this, Context, Callback);
+    using namespace std;
 
-    BOOL ret = Socket::pfnDisconnectEx(s, ai, TF_REUSE_SOCKET, 0);
+    auto ai = shared_ptr<SocketAsyncResultImpl>(
+        new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::DisConnect, Context, Callback)
+    );
+
+    BOOL ret = Socket::pfnDisconnectEx(s, ai.get(), TF_REUSE_SOCKET, 0);
     int code = WSAGetLastError();
     if (ret)
     {
@@ -323,18 +335,17 @@ IAsyncResult * Socket::BeginDisconnect(const ASYNCCALLBACK& Callback, DWORD_PTR 
         CHAR Err[100] = {};
         StringCchPrintfA(Err, 100, "%s() failed.\r\nWSAGetLastError()==%i\r\n", __FUNCTION__, code);
         ::OutputDebugStringA(Err);
-        delete ai;
+        ai.reset();
         SocketException e(code);
         SET_EXCEPTION(e);
         throw e;
     }
-    return ai;
+    return static_pointer_cast<IAsyncResult>(ai);
 }
 
-void Socket::EndDisconnect(IAsyncResult * asyncResult)
+inline void Socket::EndDisconnect(std::shared_ptr<IAsyncResult> asyncResult)
 {
-    SocketAsyncResultImpl* async = static_cast<SocketAsyncResultImpl*>(asyncResult);
-    async->WaitForCompletion();
+    std::static_pointer_cast<SocketAsyncResultImpl>(asyncResult)->WaitForCompletion();
 }
 
 WSAEVENT Socket::Listen(int backlog)
@@ -351,7 +362,7 @@ WSAEVENT Socket::Listen(int backlog)
         SET_EXCEPTION(e);
         throw e;
     }
-    int retval = ::WSAEventSelect(this->s, hEventAccept, FD_ACCEPT);
+    int retval = ::WSAEventSelect(s, hEventAccept, FD_ACCEPT);
     if (retval != 0)
     {
         code = WSAGetLastError();
@@ -403,7 +414,7 @@ DWORD Socket::IoControl(
     }
 }
 
-IAsyncResult* Socket::BeginReceive(
+std::shared_ptr<IAsyncResult> Socket::BeginReceive(
     LPBYTE pBuffer,
     DWORD cbBuffer,
     LPDWORD lpdwFlags,
@@ -411,13 +422,16 @@ IAsyncResult* Socket::BeginReceive(
     DWORD_PTR Context
 )
 {
-    SocketAsyncResultImpl* ai = new SocketAsyncResultImpl(*this, Context, Callback);
+    using namespace std;
+    
+    auto ai = shared_ptr<SocketAsyncResultImpl>(
+        new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::Receive, Context, Callback)
+    );
     ai->get__InternalParams().push_back(reinterpret_cast<DWORD_PTR>(lpdwFlags));
-    ai->set__InternalOperation(std::bind(&SocketAsyncResultImpl::ReceiveInternalOp, ai));
 
     WSABUF buf = { cbBuffer, reinterpret_cast<char*>(pBuffer) };
     DWORD dwNumberOfBytesRecvd = 0;
-    int retval = ::WSARecv(s, &buf, 1, &dwNumberOfBytesRecvd, lpdwFlags, ai, nullptr);
+    int retval = ::WSARecv(s, &buf, 1, &dwNumberOfBytesRecvd, lpdwFlags, ai.get(), nullptr);
     int code = WSAGetLastError();
     if (retval == 0)
     {
@@ -428,37 +442,38 @@ IAsyncResult* Socket::BeginReceive(
         CHAR Err[100] = {};
         StringCchPrintfA(Err, 100, "%s() failed.\r\nWSAGetLastError()==%i\r\n", __FUNCTION__, code);
         ::OutputDebugStringA(Err);
-        delete ai;
+        ai.reset();
         UpdateStatusAfterSocketError(code);
         SocketException e(code);
         SET_EXCEPTION(e);
         throw e;
     }
-    return ai;
+    return static_pointer_cast<IAsyncResult>(ai);
 }
 
-DWORD Socket::EndReceive(IAsyncResult * asyncResult)
+DWORD Socket::EndReceive(std::shared_ptr<IAsyncResult> asyncResult)
 {
-    SocketAsyncResultImpl* async = static_cast<SocketAsyncResultImpl*>(asyncResult);
+    auto async = std::static_pointer_cast<SocketAsyncResultImpl>(asyncResult);
     async->WaitForCompletion();
 
     DWORD cbTransfer = 0, dwFlags = 0;
-    ::WSAGetOverlappedResult(s, async, &cbTransfer, TRUE, &dwFlags);
+    ::WSAGetOverlappedResult(s, async.get(), &cbTransfer, TRUE, &dwFlags);
     return cbTransfer;
 }
 
 std::shared_ptr<IAsyncResult> Socket::BeginSend(
-    const std::vector<BYTE>& Buffer,
+    const LPBYTE lpBuffer,
+    DWORD cbBuffer,
     DWORD dwFlags,
     const ASYNCCALLBACK & Callback,
     DWORD_PTR Context
 )
 {
     using namespace std;
-    auto ai = shared_ptr<SocketAsyncResultImpl>(new SocketAsyncResultImpl(*this, Context, Callback));
+    auto ai = shared_ptr<SocketAsyncResultImpl>(new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::Send, Context, Callback));
 
-    WSABUF buf = { Buffer.size(), (CHAR*)(&*Buffer.begin()) };
-    int retval = ::WSASend(this->s, &buf, 1, nullptr, dwFlags, ai.get(), nullptr);
+    WSABUF buf = { cbBuffer, reinterpret_cast<char*>(lpBuffer) };
+    int retval = ::WSASend(s, &buf, 1, nullptr, dwFlags, ai.get(), nullptr);
     int code = WSAGetLastError();
     if (retval == 0)
     {
@@ -480,9 +495,7 @@ std::shared_ptr<IAsyncResult> Socket::BeginSend(
 
 DWORD Socket::EndSend(std::shared_ptr<IAsyncResult> asyncResult)
 {
-    using namespace std;
-
-    shared_ptr<SocketAsyncResultImpl> async = static_pointer_cast<SocketAsyncResultImpl>(asyncResult);
+    auto async = std::static_pointer_cast<SocketAsyncResultImpl>(asyncResult);
     async->WaitForCompletion();
 
     DWORD cbTransfer = 0, dwFlags = 0;
@@ -505,7 +518,7 @@ void Socket::Shutdown(int how)
     }
 }
 
-IAsyncResult* Socket::BeginSendTo(
+std::shared_ptr<IAsyncResult> Socket::BeginSendTo(
     const BYTE* lpBuffer,
     DWORD cbBuffer,
     DWORD dwFlags,
@@ -515,10 +528,14 @@ IAsyncResult* Socket::BeginSendTo(
     DWORD_PTR Context
 )
 {
-    SocketAsyncResultImpl* ai = new SocketAsyncResultImpl(*this, Context, Callback);
+    using namespace std;
+
+    auto ai = shared_ptr<SocketAsyncResultImpl>(
+        new SocketAsyncResultImpl(*this, SocketAsyncResultImpl::Send, Context, Callback)
+    );
 
     WSABUF buf = { cbBuffer, (char*)lpBuffer };
-    int retval = ::WSASendTo(s, &buf, 1, nullptr, 0, lpTo, iToLen, ai, nullptr);
+    int retval = ::WSASendTo(s, &buf, 1, nullptr, 0, lpTo, iToLen, ai.get(), nullptr);
     int code = WSAGetLastError();
     if (retval == 0)
     {
@@ -529,22 +546,22 @@ IAsyncResult* Socket::BeginSendTo(
         CHAR Err[100] = {};
         StringCchPrintfA(Err, 100, "%s() failed.\r\nWSAGetLastError()==%i\r\n", __FUNCTION__, code);
         ::OutputDebugStringA(Err);
-        delete ai;
+        ai.reset();
         UpdateStatusAfterSocketError(code);
         SocketException e(code);
         SET_EXCEPTION(e);
         throw e;
     }
-    return ai;
+    return static_pointer_cast<IAsyncResult>(ai);
 }
 
-DWORD Socket::EndSendTo(IAsyncResult * asyncResult)
+DWORD Socket::EndSendTo(std::shared_ptr<IAsyncResult> asyncResult)
 {
-    SocketAsyncResultImpl* async = static_cast<SocketAsyncResultImpl*>(asyncResult);
+    auto async = std::static_pointer_cast<SocketAsyncResultImpl>(asyncResult);
     async->WaitForCompletion();
 
     DWORD cbTransfer = 0, dwFlags = 0;
-    ::WSAGetOverlappedResult(s, async, &cbTransfer, TRUE, &dwFlags);
+    ::WSAGetOverlappedResult(s, async.get(), &cbTransfer, TRUE, &dwFlags);
     return cbTransfer;
 }
 
@@ -674,7 +691,7 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
 
     void TcpClient::Close(void)
     {
-        ASYNCCALLBACK callback = [](IAsyncResult* pi)
+        ASYNCCALLBACK callback = [](std::shared_ptr<IAsyncResult> pi)
         {
             
         };
@@ -697,19 +714,20 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
         addr.sin_family = _Socket->get__AddressFamily();
         addr.sin_port = htons(RemotePort);
         InetPtonW(addr.sin_family, RemoteIP.c_str(), &addr.sin_addr);
-        IAsyncResult* ai =  _Socket->BeginConnect((sockaddr*)&addr, sizeof(sockaddr_in), nullptr, NULL);
+        auto ai =  _Socket->BeginConnect((sockaddr*)&addr, sizeof(sockaddr_in), nullptr, NULL);
         auto endMethod = std::bind(&Socket::EndConnect, _Socket, std::placeholders::_1);
         return Task::FromAsync(ai, endMethod);
     }
 
     Task TcpClient::SendAsync(
-        const std::vector<BYTE>& Buffer,
+        const LPBYTE lpBuffer,
+        DWORD cbBuffer,
         DWORD dwFlags
     )
     {
         using namespace std;
 
-        auto ai = _Socket->BeginSend(Buffer, dwFlags, nullptr, NULL);
+        auto ai = _Socket->BeginSend(lpBuffer, cbBuffer, dwFlags, nullptr, NULL);
         auto endMethod = [this](shared_ptr<IAsyncResult> async)
         {
             DWORD_PTR ret = static_cast<DWORD_PTR>(_Socket->EndSend(async));
@@ -724,8 +742,8 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
         LPDWORD lpdwFlags
     )
     {
-        IAsyncResult* ai = _Socket->BeginReceive(pBuffer, cbBuffer, lpdwFlags, nullptr, NULL);
-        auto endMethod = [this](IAsyncResult* async)
+        auto ai = _Socket->BeginReceive(pBuffer, cbBuffer, lpdwFlags, nullptr, NULL);
+        auto endMethod = [this](std::shared_ptr<IAsyncResult> async)
         {
             return static_cast<DWORD_PTR>(_Socket->EndReceive(async));
         };

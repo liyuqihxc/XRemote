@@ -3,19 +3,19 @@
 #ifndef _SERVICE_H_
 #define _SERVICE_H_
 
-#ifdef _USE_DLL
+#ifdef _SVC_DLL
 
 __declspec(dllexport) void WINAPI ServiceMainW(DWORD dwArgc, LPWSTR* lpszArgv);
 __declspec(dllexport) void WINAPI InstallServiceW(HWND, HINSTANCE, LPWSTR, int);
 __declspec(dllexport) void WINAPI UninstallServiceW(HWND, HINSTANCE, LPWSTR, int);
 
-#endif // _USE_DLL
+#endif // _SVC_DLL
 
 namespace hxc
 {
     class ServiceBase;
 
-#ifndef _USE_DLL
+#ifdef _SVC_EXE
     typedef struct _tagServiceMapEntry
     {
         LPWSTR lpServiceName;
@@ -34,7 +34,7 @@ namespace hxc
         PSERVICE_MAP_ENTRYW m_pMap;
         LPSERVICE_TABLE_ENTRYW _DispatchTable;
     };
-#endif // !_USE_DLL
+#endif // SVC_EXE
 
 #define DECLARE_SERVICE_NAME(name) \
     public: virtual const std::wstring& ServiceName(){return name;}
