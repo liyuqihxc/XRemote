@@ -1,8 +1,5 @@
 #include "stdafx.h"
 #include "hxc.h"
-#include "../Res.h"
-
-using namespace std;
 
 namespace hxc
 {
@@ -207,7 +204,7 @@ namespace hxc
         return;
     }
 
-    void Utility::Unicode2Utf8(const wstring & src, string & utf8)
+    void Utility::Unicode2Utf8(const std::wstring & src, std::string & utf8)
     {
         int iLen = WideCharToMultiByte(CP_UTF8, 0, src.c_str(), -1, nullptr, 0, nullptr, nullptr);
         LPSTR str = new CHAR[iLen];
@@ -217,7 +214,7 @@ namespace hxc
         delete[] str;
     }
 
-    void Utility::Utf82Unicode(const string & src, wstring & unicode)
+    void Utility::Utf82Unicode(const std::string & src, std::wstring & unicode)
     {
         int iLen = MultiByteToWideChar(CP_UTF8, 0, src.c_str(), -1, nullptr, 0);
         LPWSTR str = new WCHAR[iLen];
@@ -227,20 +224,19 @@ namespace hxc
         delete[] str;
     }
 
-    const vector<BYTE> Utility::get__PasswordAsKey(void)
+    const std::vector<BYTE> Utility::get__PasswordAsKey(std::wstring password)
     {
-        wstring password = Resource::get__Password();
         if (password.size() >= 16)
         {
             Exception e(L"资源文件当中的Password值字符长度超过16个字符。");
             SET_EXCEPTION(e);
             throw e;
         }
-        string utf8;
+        std::string utf8;
         Utility::Unicode2Utf8(password, utf8);
         BYTE key[16] = {};
         memcpy_s(key, 16, utf8.c_str(), (utf8.size() + 1) * sizeof(CHAR));
-        return vector<BYTE>(key, key + 16);
+        return std::vector<BYTE>(key, key + 16);
     }
 
     int Utility::FromBase64_ComputeResultLength(const std::string & base64, int inputLength)

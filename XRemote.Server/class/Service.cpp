@@ -132,7 +132,7 @@ namespace hxc
             OnStart();
             SetServiceStatus(SERVICE_RUNNING);
         }
-        catch (Exception& e)
+        catch (const Exception& e)
         {
             SetServiceStatus(SERVICE_STOPPED, e.get__HResult());
             _ASSERT(FALSE);
@@ -147,7 +147,7 @@ namespace hxc
                 SetServiceStatus(SERVICE_STOPPED);
                 CloseHandle(m_hEventExit);
             }
-            catch (Exception e)
+            catch (const Exception& e)
             {
                 SetServiceStatus(SERVICE_STOPPED, e.get__HResult());
                 //Report Error
@@ -187,7 +187,7 @@ namespace hxc
                 OnContinue();
                 SetServiceStatus(SERVICE_RUNNING);
             }
-            catch (Exception&)
+            catch (const Exception&)
             {
 
             }
@@ -203,7 +203,7 @@ namespace hxc
             {
 
             }
-            catch (Exception&)
+            catch (const Exception&)
             {
 
             }
@@ -215,7 +215,7 @@ namespace hxc
             {
 
             }
-            catch (Exception&)
+            catch (const Exception&)
             {
 
             }
@@ -227,7 +227,7 @@ namespace hxc
             {
 
             }
-            catch (Exception&)
+            catch (const Exception&)
             {
 
             }
@@ -240,7 +240,7 @@ namespace hxc
                 SetServiceStatus(SERVICE_STOP_PENDING);
                 ::SetEvent(this->m_hEventExit);
             }
-            catch (Exception&)
+            catch (const Exception&)
             {
 
             }

@@ -18,19 +18,23 @@ namespace hxc
     class Task
     {
     public:
-        typedef std::function<DWORD_PTR(DWORD_PTR)> FUNCTION;
+        typedef std::function<DWORD_PTR(DWORD_PTR, HANDLE)> FUNCTION;
 
         Task() = delete;
         Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags = WT_EXECUTEDEFAULT);
         Task(const Task& t);
         Task& operator=(const Task& t);
         ~Task();
+    private:
+        Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags, bool IsOverlappedTask);
     public:
         DWORD_PTR get_Result();
 
     public:
         void Start();
-        void Wait(DWORD millisecondsTimeout);
+        void Wait(DWORD millisecondsTimeout = INFINITE);
+        void Cancel();
+        Task ContinueWith(std::function<DWORD_PTR(Task)> delegate, ULONG Flags = WT_EXECUTEDEFAULT);
         static void WaitAll(const std::vector<Task>& tasks, int millisecondsTimeout);
         static int WaitAny(const std::vector<Task>& tasks, int millisecondsTimeout);
         static Task FromAsync(
@@ -44,22 +48,31 @@ namespace hxc
             ULONG Flags = WT_EXECUTEDEFAULT
         );
 
+        template<class _Fx, class... _Typ>
+        static FUNCTION BindFunction(_Fx&& fx, _Typ&&... t)
+        {
+            using namespace std;
+            return bind(fx, (t)..., placeholders::_1, placeholders::_2);
+        }
+
     private:
         std::vector<DWORD_PTR>& get_InternalParams();
 
         typedef class _TaskContext
         {
         private:
-            _TaskContext(const _TaskContext&) {}
-            _TaskContext& operator=(const _TaskContext&) {}
-            _TaskContext() {}
             static DWORD WINAPI ThreadPoolCallback(PVOID Param);
         public:
-            _TaskContext(const FUNCTION& function, DWORD_PTR Params, LONG Flags);
+            _TaskContext(const FUNCTION& function, DWORD_PTR Params, LONG Flags, bool IsOverlappedTask);
+            _TaskContext(const _TaskContext&) = delete;
+            _TaskContext& operator=(const _TaskContext&) = delete;
+            _TaskContext() = delete;
             ~_TaskContext();
 
             void Start();
             void Wait(DWORD millisecondsTimeout);
+            void Cancel(bool WaitEnd = true);
+            Task ContinueWith(std::function<DWORD_PTR(Task)> delegate, ULONG Flags);
 
             DWORD_PTR get_Result();
             std::vector<DWORD_PTR>& get_InternalParams();
@@ -67,7 +80,8 @@ namespace hxc
             void AddRef(void);
             void Release(void);
         private:
-            HANDLE m_hEvent;
+            HANDLE m_hEventWait;
+            HANDLE m_hEventCancel;
             FUNCTION m_Proc;
             DWORD_PTR m_Params;
             std::vector<DWORD_PTR> m_InternalParams;
@@ -77,9 +91,12 @@ namespace hxc
             LONG m_CreationFlags;
             volatile LONG m_Ref;
             Exception m_Exception;
+            bool m_IsOverlappedTask;
+            std::shared_ptr<AsyncResultImpl> m_AsyncContext;
         } TASK_CONTEXT;
 
         TASK_CONTEXT* m_pTaskContext;
+        explicit Task(TASK_CONTEXT* p);
     };
 }
 

@@ -12,6 +12,8 @@
 #include<strsafe.h>
 #include <string>
 #include <functional>
+
+#include<strsafe.h>
 #include <combaseapi.h>
 #include <Unknwn.h>
 #include <WinSock2.h>
@@ -58,6 +60,13 @@ namespace hxc
 
         virtual void Complete(DWORD ErrCode, bool CompletedSynchronously);
         virtual void WaitForCompletion(void);
+        virtual void CancelIo(void) = 0;
+
+        static VOID CALLBACK IOCompletionRoutine(
+            _In_    DWORD        dwErrorCode,
+            _In_    DWORD        dwNumberOfBytesTransfered,
+            _Inout_ LPOVERLAPPED lpOverlapped
+        );
 
         std::vector<DWORD_PTR>& get__InternalParams(void);
 

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "hxc.h"
-#include "Exceptions.h"
 
 namespace hxc
 {
@@ -43,15 +42,15 @@ namespace hxc
 
     }
 
-    HRESULT Exception::get__HResult() { return _HResult; }
+    HRESULT Exception::get__HResult() const { return _HResult; }
 
     void Exception::set__HResult(HRESULT value) { _HResult = value; }
 
-    const std::wstring & Exception::get__Message() { return _Message; }
+    const std::wstring & Exception::get__Message() const { return _Message; }
 
     void Exception::set__Message(const std::wstring & value) { _Message = value; }
 
-    const std::wstring & Exception::get__SourceFileName() { return _SourceFileName; }
+    const std::wstring & Exception::get__SourceFileName() const { return _SourceFileName; }
 
     void Exception::set__SourceFileName(const std::wstring & value) { _SourceFileName = value; }
 
@@ -64,7 +63,7 @@ namespace hxc
         delete[] str;
     }
 
-    const std::wstring & Exception::get__Function() { return _Function; }
+    const std::wstring & Exception::get__Function() const { return _Function; }
 
     void Exception::set__Function(const std::wstring & value) { _Function = value; }
 
@@ -77,7 +76,7 @@ namespace hxc
         delete[] str;
     }
 
-    int Exception::get__LineNumber() { return _LineNumber; }
+    int Exception::get__LineNumber() const { return _LineNumber; }
 
     void Exception::set__LineNumber(int value) { _LineNumber = value; }
 

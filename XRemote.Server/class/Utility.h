@@ -13,7 +13,7 @@ namespace hxc
         static void FromBase64String(const std::string& base64, std::vector<BYTE>& binvalue);
         static void Unicode2Utf8(const std::wstring& src, std::string& utf8);
         static void Utf82Unicode(const std::string& src, std::wstring& unicode);
-        static const std::vector<BYTE> get__PasswordAsKey(void);
+        static const std::vector<BYTE> get__PasswordAsKey(std::wstring password);
     private:
         static int FromBase64_ComputeResultLength(const std::string& base64, int inputLength);
     };

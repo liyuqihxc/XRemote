@@ -37,7 +37,7 @@ namespace hxc
 #endif // SVC_EXE
 
 #define DECLARE_SERVICE_NAME(name) \
-    public: virtual const std::wstring& ServiceName(){return name;}
+    public: inline virtual const std::wstring ServiceName(){return name;}
 
 	class ServiceBase
 	{
@@ -53,7 +53,7 @@ namespace hxc
         inline HMODULE ModuleHandle();
         void ReportEvent();
         void SetServiceStatus(DWORD dwCurrState, DWORD dwWin32Error = NO_ERROR, DWORD dwCustomError = 0) throw();
-        virtual const std::wstring& ServiceName() = 0;
+        virtual const std::wstring ServiceName() = 0;
         void SetStatusCheckPoint(DWORD dwCheckPoint);
         void AddStatusCheckPoint();
         void SetStatusWaitHint(DWORD dwWaitHint);

@@ -173,7 +173,6 @@ namespace hxc
 #pragma region PropertiesInternal
         std::shared_ptr<Socket> _Socket;
 #pragma endregion
-        CRITICAL_SECTION Lock;
     };
 
     class CTcpListener
@@ -210,7 +209,11 @@ namespace hxc
     template<typename _Elem>
     class tcp_streambuf : public std::basic_streambuf<_Elem, std::char_traits<_Elem>>
     {
+        typedef typename std::basic_streambuf<_Elem, std::char_traits<_Elem>> _Base;
     public:
+        typedef typename _Elem char_type;
+        typedef typename _Base::int_type int_type;
+        typedef typename _Base::traits_type traits_type;
         explicit tcp_streambuf(TcpClient& client) : _client(client)
         {
             _buffer_send = reinterpret_cast<char_type*>(_DataPool::BufferPool().Pop());
@@ -220,6 +223,12 @@ namespace hxc
             _buffer_recv = reinterpret_cast<char_type*>(_DataPool::BufferPool().Pop());
             ZeroMemory(_buffer_recv, BUFFER_SIZE);
             setg(_buffer_recv, _buffer_recv + BUFFER_SIZE / sizeof(char_type), _buffer_recv + BUFFER_SIZE / sizeof(char_type));
+
+            ::InitializeCriticalSection(&_recv_lock);
+            ::InitializeCriticalSection(&_send_lock);
+
+            Task ReceiveTask(Task::BindFunction(&tcp_streambuf::ReceiveProc, this), NULL, WT_EXECUTELONGFUNCTION);
+            ReceiveTask.Wait();
         }
         virtual ~tcp_streambuf()
         {
@@ -227,12 +236,19 @@ namespace hxc
 
             _DataPool::BufferPool().Push(reinterpret_cast<LPBYTE>(_buffer_send));
             _DataPool::BufferPool().Push(reinterpret_cast<LPBYTE>(_buffer_recv));
+
+            ::DeleteCriticalSection(&_recv_lock);
+            ::DeleteCriticalSection(&_send_lock);
         }
+
+        inline void AcquireReadLock(void) { ::EnterCriticalSection(&_recv_lock); }
+        inline void ReleaseReadLock(void) { ::LeaveCriticalSection(&_recv_lock); }
+        inline void AcquireWriteLock(void) { ::EnterCriticalSection(&_send_lock); }
+        inline void ReleaseWriteLock(void) { ::LeaveCriticalSection(&_send_lock); }
     protected:
         virtual int_type overflow(int_type ch = traits_type::eof())
         {
-            flush();
-            setp(pbase(), epptr()); //重新设定send缓冲, 将pptr()重置到pbase()处
+            sync();
 
             if (traits_type::eq_int_type(traits_type::eof(), ch))
                 return traits_type::not_eof(ch);
@@ -245,8 +261,8 @@ namespace hxc
         {
             //此时get buffer中已经没有内容, 重新读入
             DWORD dwFlags = 0;
-            Task t = _client.ReceiveAsync(reinterpret_cast<LPBYTE>(eback()), BUFFER_SIZE, &dwFlags);
-            t.Wait(INFINITE);
+            Task t(Task::BindFunction(&tcp_streambuf::ReceiveProc, this), NULL);
+            t.Wait();
             int recv_size = t.get_Result();
 
             if (recv_size == 0)
@@ -258,17 +274,38 @@ namespace hxc
 
         virtual int sync()
         {
-            flush();
-            return 0;
+            try
+            {
+                _client.SendAsync(reinterpret_cast<LPBYTE>(pbase()), (pptr() - pbase() + 1) * sizeof(char_type), 0).Wait();
+                setp(pbase(), epptr());// 重新设定send缓冲, 将pptr()重置到pbase()处
+                return 0;
+            }
+            catch (const Exception& e)
+            {
+                return -1;
+            }
         }
     private:
-        int flush(void)
+        DWORD_PTR ReceiveProc(DWORD_PTR Param, HANDLE hCancel)
         {
-            _client.SendAsync(reinterpret_cast<LPBYTE>(pbase()), (pptr() - pbase() + 1) * sizeof(char_type), 0).Wait(INFINITE);
+            LPBYTE lpBuff = reinterpret_cast<LPBYTE>(eback());
+            while (::WaitForSingleObject(hCancel, 0) == WAIT_TIMEOUT)
+            {
+                AcquireReadLock();
+                int size = (gptr() - eback()) * sizeof(char_type);
+                if (eback() != gptr())
+                {
+                    DWORD dwFlags = 0;
+                    Task t = _client.ReceiveAsync(lpBuff, size, &dwFlags);
+                    t.ContinueWith([this](Task task)
+                    {
 
-            setp(pbase(), epptr());
+                    }).Start();
+                }
+                ReleaseReadLock();
+            }
 
-            return 0;
+            return t.get_Result();
         }
     private:
         const int BUFFER_SIZE = _DataPool::BufferSize;
@@ -276,14 +313,20 @@ namespace hxc
         char_type* _buffer_send;
 
         TcpClient& _client;
+        CRITICAL_SECTION _recv_lock;
+        CRITICAL_SECTION _send_lock;
     };
 
     template<typename _Elem>
     class tcp_stream : public std::basic_iostream<_Elem, std::char_traits<_Elem>>
     {
+        typedef typename std::basic_iostream<_Elem, std::char_traits<_Elem>> _Base;
     public:
+        typedef typename _Elem char_type;
+        typedef typename _Base::int_type int_type;
+        typedef typename _Base::traits_type traits_type;
         explicit tcp_stream(TcpClient& client)
-            : streambuf(client), std::basic_iostream<char_type, traits_type>(&streambuf)
+            : _streambuf(client), std::basic_iostream<char_type, traits_type>(&_streambuf)
         {
 
         }
@@ -293,12 +336,17 @@ namespace hxc
 
         }
 
+        inline void AcquireReadLock(void) { _streambuf.AcquireReadLock(); }
+        inline void ReleaseReadLock(void) { _streambuf.ReleaseReadLock(); }
+        inline void AcquireWriteLock(void) { _streambuf.AcquireWriteLock(); }
+        inline void ReleaseWriteLock(void) { _streambuf.ReleaseWriteLock(); }
+
         tcp_stream* rdbuf()
         {
-            return &streambuf;
+            return &_streambuf;
         }
     private:
-        tcp_streambuf<char_type> streambuf;
+        tcp_streambuf<char_type> _streambuf;
     };
 
 };//namespace hxc

@@ -132,7 +132,7 @@ namespace hxc
     {
         CStub() = delete;
         explicit CStub(TcpClient& socket) : _ControlSock(socket), _RefCount(0), _EventStop(hxc::_DataPool::ManualResetEventPool().Pop()),
-            _ReceiveTask(std::bind(&OnReceive, std::placeholders::_1), reinterpret_cast<DWORD_PTR>(this), WT_EXECUTEINLONGTHREAD)
+            _ReceiveTask(Task::BindFunction(&CStub::OnReceive, this), NULL, WT_EXECUTEINLONGTHREAD)
         {
         }
     public:
@@ -229,23 +229,21 @@ namespace hxc
             return 0;
         }
     protected:
-        static DWORD_PTR OnReceive(DWORD_PTR Param)
+        DWORD_PTR OnReceive(DWORD_PTR Param, HANDLE hCancel)
         {
             using namespace hxc;
             using namespace std;
 
-            CStub* pThis = reinterpret_cast<CStub*>(Param);
             LPBYTE pBuffer = _DataPool::BufferPool().Pop();
-            tcp_stream<BYTE> stream(pThis->_ControlSock);
+            tcp_stream<BYTE> stream(_ControlSock);
 
-            while (::WaitForSingleObject(pThis->_EventStop, 0) == WAIT_TIMEOUT)
+            while (::WaitForSingleObject(_EventStop, 0) == WAIT_TIMEOUT)
             {
                 try
                 {
-                    auto recv_size = stream.readsome(pBuffer, streamsize(_DataPool::BufferSize));
-                    recv_size = 0;
+                    stream.read(pBuffer, 100);
                 }
-                catch (const Exception&)
+                catch (const Exception& e)
                 {
                     break;
                 }

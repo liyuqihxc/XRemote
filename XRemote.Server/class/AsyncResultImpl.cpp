@@ -30,7 +30,7 @@ void hxc::AsyncResultImpl::Complete(DWORD ErrCode, bool CompletedSynchronously)
     _IsCompleted = true;
 
     ::EnterCriticalSection(&_Lock);
-    if (!_AsyncWaitHandle)
+    if (_AsyncWaitHandle)
         ::SetEvent(_AsyncWaitHandle);
     ::LeaveCriticalSection(&_Lock);
 
@@ -40,7 +40,7 @@ void hxc::AsyncResultImpl::Complete(DWORD ErrCode, bool CompletedSynchronously)
         {
             _Callback(shared_from_this());
         }
-        catch (const Exception&)
+        catch (const Exception& e)
         {
 
         }
@@ -57,8 +57,23 @@ void hxc::AsyncResultImpl::WaitForCompletion(void)
     }
 
     if (!get__IsCompleted())
-        ::WaitForSingleObject(get__AsyncWaitHandle(), INFINITE);
+    {
+        ::EnterCriticalSection(&_Lock);
+        if (_AsyncWaitHandle == NULL)
+            _AsyncWaitHandle = _DataPool::ManualResetEventPool().Pop();
+        ::LeaveCriticalSection(&_Lock);
+
+        ::WaitForSingleObject(_AsyncWaitHandle, INFINITE);
+    }
+
     _EndCalled = true;
+}
+
+VOID hxc::AsyncResultImpl::IOCompletionRoutine(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
+{
+    AsyncResultImpl* pAsync = static_cast<AsyncResultImpl*>(lpOverlapped);
+
+    pAsync->Complete(dwErrorCode, false);
 }
 
 std::vector<DWORD_PTR>& hxc::AsyncResultImpl::get__InternalParams(void)

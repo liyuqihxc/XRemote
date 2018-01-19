@@ -53,15 +53,9 @@ namespace hxc
                 throw SocketException(static_cast<int>(get__ErrorCode()));
         }
 
-        static VOID CALLBACK IOCompletionRoutine(
-            _In_    DWORD        dwErrorCode,
-            _In_    DWORD        dwNumberOfBytesTransfered,
-            _Inout_ LPOVERLAPPED lpOverlapped
-        )
+        virtual void CancelIo()
         {
-            SocketAsyncResultImpl* pAsync = static_cast<SocketAsyncResultImpl*>(lpOverlapped);
-
-            pAsync->Complete(dwErrorCode, false);
+            ::CancelIoEx((HANDLE)_Socket.get__Handle(), this);
         }
 
         void AcceptInternalOp()
@@ -119,7 +113,7 @@ namespace hxc
             }
         }
 
-        void* operator new(size_t size)
+        /*void* operator new(size_t size)
         {
             free_elements.Lock();
             if (free_elements->empty())
@@ -141,14 +135,14 @@ namespace hxc
             else
                 free_elements->push_back(p);
             free_elements.Release();
-        }
+        }*/
     private:
-        static Critical_Section<std::vector<void*>> free_elements;
+        //static Critical_Section<std::vector<void*>> free_elements;
         Socket& _Socket;
         InternalOp_Type _InternalOperation;
     };
 
-    Critical_Section<std::vector<void*>>  SocketAsyncResultImpl::free_elements;
+    //Critical_Section<std::vector<void*>>  SocketAsyncResultImpl::free_elements;
 
 Socket::Socket() :
     _AddressFamily(AF_INET), _Connected(false)
@@ -162,7 +156,7 @@ Socket::Socket() :
     s = _DataPool::TCPSocketPool().Pop();
     _ASSERT(s != INVALID_SOCKET);
 
-    BOOL b = ::BindIoCompletionCallback((HANDLE)s, SocketAsyncResultImpl::IOCompletionRoutine, 0);
+    BOOL b = ::BindIoCompletionCallback((HANDLE)s, AsyncResultImpl::IOCompletionRoutine, 0);
     if (!b)
     {
         Win32Exception e(Exception::NTSTATUS_To_Win32Err((LONG)b));
@@ -668,8 +662,6 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
 
     TcpClient::TcpClient() : _Socket(Socket::Create())
     {
-        InitializeCriticalSection(&Lock);
-
         sockaddr_in sock = {};
         sock.sin_family = AF_INET;
         //sock.sin_addr.S_un.S_addr = INADDR_ANY;
@@ -679,7 +671,6 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
     TcpClient::~TcpClient()
     {
         Close();
-        DeleteCriticalSection(&Lock);
     }
 
     std::shared_ptr<Socket> TcpClient::get__Client() { return _Socket; }

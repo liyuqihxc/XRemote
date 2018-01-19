@@ -16,21 +16,21 @@ namespace hxc
         explicit Exception(HRESULT hresult);
         explicit Exception(const std::wstring& Message);
     public:
-        HRESULT get__HResult();
+        HRESULT get__HResult() const;
         void set__HResult(HRESULT value);
 
-        const std::wstring& get__Message();
+        const std::wstring& get__Message() const;
         void set__Message(const std::wstring& value);
 
-        const std::wstring& get__SourceFileName();
+        const std::wstring& get__SourceFileName() const;
         void set__SourceFileName(const std::wstring& value);
         void set__SourceFileName(const std::string& value);
 
-        const std::wstring& get__Function();
+        const std::wstring& get__Function() const;
         void set__Function(const std::wstring& value);
         void set__Function(const std::string& value);
 
-        int get__LineNumber();
+        int get__LineNumber() const;
         void set__LineNumber(int value);
 
         static DWORD NTSTATUS_To_Win32Err(LONG code);

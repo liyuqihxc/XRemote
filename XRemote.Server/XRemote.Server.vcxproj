@@ -112,6 +112,11 @@
       <GenerateStublessProxies>false</GenerateStublessProxies>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
     </Midl>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)xRemoteServer.tlb" "$(SolutionDir)Debug\xRemoteServer.tlb"
+cd "$(SolutionDir)Debug"
+tlbimp xRemoteServer.tlb /namespace:xRemoteServerLib /out:xRemoteServerLib.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

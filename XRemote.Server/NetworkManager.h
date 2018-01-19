@@ -14,12 +14,11 @@ public:
     static void Start();
     static void Stop();
 private:
-    static DWORD_PTR EstablishConnection(DWORD_PTR Param);
+    static DWORD_PTR EstablishConnection(DWORD_PTR Param, HANDLE hCancel);
 private:
     static hxc::TcpClient _Connection;
     static std::unique_ptr<hxc::CStub<ClassFactoryImpl>> _ClassFactoryStub;
     static std::unique_ptr<hxc::Task> _EstablishConnectionTask;
-    static HANDLE _EventStop;
 };
 
 #endif// if !defined _NETWORKMANAGER_H_
