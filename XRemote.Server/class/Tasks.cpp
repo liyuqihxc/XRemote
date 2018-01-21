@@ -65,7 +65,7 @@ void hxc::Task::Cancel()
 
 hxc::Task hxc::Task::ContinueWith(std::function<DWORD_PTR(Task)> delegate, ULONG Flags)
 {
-    return m_pTaskContext->ContinueWith(delegate, Flags)
+    return m_pTaskContext->ContinueWith(delegate, Flags);
 }
 
 hxc::Task hxc::Task::FromAsync(std::shared_ptr<IAsyncResult> asyncResult, const ASYNCCALLBACK& endMethod, ULONG Flags)

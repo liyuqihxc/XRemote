@@ -23,16 +23,20 @@ namespace XRemote
         {
             Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("Config.json"));
 
-            if (CfxRuntime.PlatformArch == CfxPlatformArch.x64)
-                CfxRuntime.LibCefDirPath = Path.GetFullPath(@"..\..\..\libcef\x64");
-            else
-                CfxRuntime.LibCefDirPath = System.IO.Path.GetFullPath(@"..\..\..\libcef\x86");
-
-            CfxRuntime.LibCfxDirPath = CfxRuntime.LibCefDirPath;
-
-            string assemblyDir = System.IO.Path.GetDirectoryName(
+            string assemblyDir = Path.GetDirectoryName(
                 new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath
             );
+
+#if DEBUG
+            if (CfxRuntime.PlatformArch == CfxPlatformArch.x64)
+                CfxRuntime.LibCefDirPath = Path.Combine(Config.General["LibCefDirPath"], "x64");
+            else
+                CfxRuntime.LibCefDirPath = Path.Combine(Config.General["LibCefDirPath"], "x86");
+#else
+            CfxRuntime.LibCefDirPath = assemblyDir;
+#endif
+
+            CfxRuntime.LibCfxDirPath = CfxRuntime.LibCefDirPath;
 
             //CfxRuntime.EnableHighDpiSupport();
 
@@ -48,12 +52,14 @@ namespace XRemote
             settings.NoSandbox = true;
 
             //settings.SingleProcess = true;
-            settings.BrowserSubprocessPath = Path.Combine(assemblyDir, "xRemote");
 
             //settings.LogSeverity = CfxLogSeverity.Disable;
-
-            settings.ResourcesDirPath = Path.GetFullPath(@"..\..\..\libcef\Resources");
-            settings.LocalesDirPath = Path.GetFullPath(@"..\..\..\libcef\Resources\locales");
+#if DEBUG
+            settings.ResourcesDirPath = Config.General["LibCefDirPath"];
+#else
+            settings.ResourcesDirPath = assemblyDir
+#endif
+            settings.LocalesDirPath = Path.Combine(settings.ResourcesDirPath, "locales");
 
             var app = new CfxApp();
             app.OnBeforeCommandLineProcessing += (s, e) =>

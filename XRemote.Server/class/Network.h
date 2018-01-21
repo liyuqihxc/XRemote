@@ -214,7 +214,8 @@ namespace hxc
         typedef typename _Elem char_type;
         typedef typename _Base::int_type int_type;
         typedef typename _Base::traits_type traits_type;
-        explicit tcp_streambuf(TcpClient& client) : _client(client)
+        explicit tcp_streambuf(TcpClient& client) :
+            _client(client), _receive_task(Task::BindFunction(&tcp_streambuf::ReceiveProc, this), NULL, WT_EXECUTELONGFUNCTION)
         {
             _buffer_send = reinterpret_cast<char_type*>(_DataPool::BufferPool().Pop());
             ZeroMemory(_buffer_send, BUFFER_SIZE);
@@ -227,8 +228,7 @@ namespace hxc
             ::InitializeCriticalSection(&_recv_lock);
             ::InitializeCriticalSection(&_send_lock);
 
-            Task ReceiveTask(Task::BindFunction(&tcp_streambuf::ReceiveProc, this), NULL, WT_EXECUTELONGFUNCTION);
-            ReceiveTask.Wait();
+            _receive_task.Start();
         }
         virtual ~tcp_streambuf()
         {
@@ -239,6 +239,8 @@ namespace hxc
 
             ::DeleteCriticalSection(&_recv_lock);
             ::DeleteCriticalSection(&_send_lock);
+
+            _receive_task.Wait();
         }
 
         inline void AcquireReadLock(void) { ::EnterCriticalSection(&_recv_lock); }
@@ -260,16 +262,17 @@ namespace hxc
         virtual int_type underflow()
         {
             //此时get buffer中已经没有内容, 重新读入
-            DWORD dwFlags = 0;
-            Task t(Task::BindFunction(&tcp_streambuf::ReceiveProc, this), NULL);
-            t.Wait();
-            int recv_size = t.get_Result();
-
+            int recv_size = _buffer_internal_recv.SynchronizedRead(reinterpret_cast<LPBYTE>(eback()), BUFFER_SIZE);
             if (recv_size == 0)
                 return traits_type::to_int_type(traits_type::eof());
 
             setg(eback(), eback(), eback() + recv_size / sizeof(char_type));
             return traits_type::to_int_type(*gptr());
+        }
+
+        virtual std::streamsize showmanyc()
+        {
+            return std::streamsize(_buffer_internal_recv.get__Length());
         }
 
         virtual int sync()
@@ -291,26 +294,27 @@ namespace hxc
             LPBYTE lpBuff = reinterpret_cast<LPBYTE>(eback());
             while (::WaitForSingleObject(hCancel, 0) == WAIT_TIMEOUT)
             {
-                AcquireReadLock();
                 int size = (gptr() - eback()) * sizeof(char_type);
                 if (eback() != gptr())
                 {
                     DWORD dwFlags = 0;
                     Task t = _client.ReceiveAsync(lpBuff, size, &dwFlags);
-                    t.ContinueWith([this](Task task)
-                    {
-
-                    }).Start();
+                    t.Wait();
+                    AcquireReadLock();
+                    _buffer_internal_recv.SynchronizedWrite(lpBuff, t.get_Result());
+                    ReleaseReadLock();
                 }
-                ReleaseReadLock();
             }
 
-            return t.get_Result();
+            return 0;
         }
     private:
         const int BUFFER_SIZE = _DataPool::BufferSize;
         char_type* _buffer_recv;
         char_type* _buffer_send;
+
+        QueueBuffer _buffer_internal_recv;
+        Task _receive_task;
 
         TcpClient& _client;
         CRITICAL_SECTION _recv_lock;

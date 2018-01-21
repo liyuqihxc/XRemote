@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "hxc.h"
 #include <crtdbg.h>
 #include <process.h>
@@ -65,9 +65,9 @@ namespace hxc
             std::vector<SERVICE_TABLE_ENTRYW> list;
             for (int i = 0; m_pMap[i].pfnCreateNew != nullptr; i++)
             {
-                ServiceBase*pInst = m_pMap[i].pfnCreateNew(); // ´´½¨·şÎñ³ÌĞòÊµÀı
+                ServiceBase*pInst = m_pMap[i].pfnCreateNew(); // åˆ›å»ºæœåŠ¡ç¨‹åºå®ä¾‹
                 m_pMap[i].pInstance = pInst;
-                m_pMap[i].pServiceMainTrunk = new StdCallThunk((void*)pInst, &ServiceBase::ServiceMain); // ·şÎñ³ÌĞòServiceMainº¯ÊıTrunk
+                m_pMap[i].pServiceMainTrunk = new StdCallThunk((void*)pInst, &ServiceBase::ServiceMain); // æœåŠ¡ç¨‹åºServiceMainå‡½æ•°Trunk
                 SERVICE_MAIN sm = m_pMap[i].pServiceMainTrunk->get__FunctionPtr<SERVICE_MAIN>();
                 SERVICE_TABLE_ENTRYW entry = { m_pMap[i].lpServiceName, sm };
                 list.push_back(entry);
@@ -193,7 +193,7 @@ namespace hxc
             }
         }
         break;
-        case SERVICE_CONTROL_INTERROGATE://SCMÒªÇó·şÎñ±¨¸æµ±Ç°×´Ì¬
+        case SERVICE_CONTROL_INTERROGATE://SCMè¦æ±‚æœåŠ¡æŠ¥å‘Šå½“å‰çŠ¶æ€
             //The handler should simply return NO_ERROR;
             //the SCM is aware of the current state of the service.
             break;

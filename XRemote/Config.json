@@ -1,11 +1,11 @@
 ﻿{
     "General": {
-        "LibCefDirPath": "",
-        "LibCefResourcesDirPath": "",
-        "LibCefLocalesDirPath":  ""
+        "LibCefDirPath": "E:\\Documents\\Visual Studio 2017\\Projects\\XRemote\\libcef\\",
+        "LibCefResourcesDirPath": "E:\\Documents\\Visual Studio 2017\\Projects\\XRemote\\libcef\\Resources\\",
+        "Commit": "34ea99c4f50434a775b5a3551bff98dde71b9074"
     },
     "Network": {
-        "ListenEndPoint": "0.0.0.0:55413",
+        "ListenEndPoint": "0.0.0.0:27015",
         "AcceptProxyTimeout": 30
     }
 }

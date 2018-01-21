@@ -10,7 +10,9 @@ namespace XRemote
 {
     class Config
     {
+#if DEBUG
+        public IDictionary<string, string> General { get; set; }
+#endif
         public IDictionary<string, string> Network { get; set; }
-        //public IDictionary<string, dynamic> Analyzer { get; set; }
     }
 }

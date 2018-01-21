@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "hxc.h"
 
 namespace hxc
@@ -228,7 +228,7 @@ namespace hxc
     {
         if (password.size() >= 16)
         {
-            Exception e(L"��Դ�ļ����е�Passwordֵ�ַ����ȳ���16���ַ���");
+            Exception e(L"资源文件当中的Password值字符长度超过16个字符。");
             SET_EXCEPTION(e);
             throw e;
         }

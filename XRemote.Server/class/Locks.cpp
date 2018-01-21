@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "hxc.h"
 
 namespace hxc
@@ -21,7 +21,7 @@ namespace hxc
 		BOOL Condition = SpinCount == -1 ? TRUE : SpinCount;
 		while (Condition)
 		{
-			//¼ì²éÊÇ·ñÓÐÐ´²Ù×÷Õ¼ÓÃËø
+			//æ£€æŸ¥æ˜¯å¦æœ‰å†™æ“ä½œå ç”¨é”
 			
 			{
 				if (SpinCount > -1)

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #ifndef _STD_TRUNK_H_
 #define _STD_TRUNK_H_
 
@@ -22,17 +22,17 @@ namespace hxc
 #pragma pack(push,1)
         typedef struct _tagThunk
         {
-            //mov rax,qword ptr[rsp]    ·µ»ØµØÖ·
-            //sub rsp 8h                            ¶ÑÕ»Ö¸Õë+1
-            //mov qword ptr[rsp],rax    ·µ»ØµØÖ·ÈëÕ»¶¥ rsp[0]
-            //mov qword ptr[rsp+28h], r9            Ô­µÚËÄ¸ö²ÎÊıÈëÕ»¶¥-5 rsp[5]
-            //mov r9,r8                             Ô­µÚÈı¸ö²ÎÊıµ½Ô­µÚËÄ¸ö²ÎÊıµÄÎ»ÖÃ
-            //mov r8,rdx                          Ô­µÚ¶ş¸ö²ÎÊıµ½Ô­µÚÈı¸ö²ÎÊıµÄÎ»ÖÃ
-            //mov rdx,rcx                        Ô­µÚÒ»¸ö²ÎÊıµ½Ô­µÚ¶ş¸ö²ÎÊıµÄÎ»ÖÃ
-            //mov rcx,this                        thisÖ¸ÕëÏÖÔÚÊÇµÚÒ»¸ö²ÎÊı
+            //mov rax,qword ptr[rsp]    è¿”å›åœ°å€
+            //sub rsp 8h                            å †æ ˆæŒ‡é’ˆ+1
+            //mov qword ptr[rsp],rax    è¿”å›åœ°å€å…¥æ ˆé¡¶ rsp[0]
+            //mov qword ptr[rsp+28h], r9            åŸç¬¬å››ä¸ªå‚æ•°å…¥æ ˆé¡¶-5 rsp[5]
+            //mov r9,r8                             åŸç¬¬ä¸‰ä¸ªå‚æ•°åˆ°åŸç¬¬å››ä¸ªå‚æ•°çš„ä½ç½®
+            //mov r8,rdx                          åŸç¬¬äºŒä¸ªå‚æ•°åˆ°åŸç¬¬ä¸‰ä¸ªå‚æ•°çš„ä½ç½®
+            //mov rdx,rcx                        åŸç¬¬ä¸€ä¸ªå‚æ•°åˆ°åŸç¬¬äºŒä¸ªå‚æ•°çš„ä½ç½®
+            //mov rcx,this                        thisæŒ‡é’ˆç°åœ¨æ˜¯ç¬¬ä¸€ä¸ªå‚æ•°
             //mov rax,proc                      
             //jmp rax
-            //add rsp 8h                        Æ½ºâÕ»
+            //add rsp 8h                        å¹³è¡¡æ ˆ
 
             //mov rax,qword ptr[rsp]
             //sub rsp,10h

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifndef _GETSYSINFO_H_
 #define _GETSYSINFO_H_
@@ -11,29 +11,29 @@ namespace hxc
         SystemInfo(void) {}
 
     public:
-        /********»ñÈ¡²Ù×÷ÏµÍ³°æ±¾£¬Service pack°æ±¾¡¢ÏµÍ³ÀàĞÍ************/
+        /********è·å–æ“ä½œç³»ç»Ÿç‰ˆæœ¬ï¼ŒService packç‰ˆæœ¬ã€ç³»ç»Ÿç±»å‹************/
         static const std::wstring& get__OSName();
-        static BOOL get__IsWow64();//ÅĞ¶ÏÊÇ·ñÎª64Î»²Ù×÷ÏµÍ³
+        static BOOL get__IsWow64();//åˆ¤æ–­æ˜¯å¦ä¸º64ä½æ“ä½œç³»ç»Ÿ
 
-        /***********»ñÈ¡Íø¿¨ÊıÄ¿ºÍÃû×Ö***********/
+        /***********è·å–ç½‘å¡æ•°ç›®å’Œåå­—***********/
         static int  get__NetworkInterFaces();
 
-        /***»ñÈ¡ÎïÀíÄÚ´æºÍĞéÄâÄÚ´æ´óĞ¡***/
+        /***è·å–ç‰©ç†å†…å­˜å’Œè™šæ‹Ÿå†…å­˜å¤§å°***/
         void GetMemoryInfo(std::wstring &dwTotalPhys, std::wstring &dwTotalVirtual);
 
-        /****»ñÈ¡CPUÃû³Æ¡¢ÄÚºËÊıÄ¿¡¢Ö÷Æµ*******/
+        /****è·å–CPUåç§°ã€å†…æ ¸æ•°ç›®ã€ä¸»é¢‘*******/
         void GetCpuInfo(std::wstring &chProcessorName, std::wstring &chProcessorType, DWORD &dwNum, DWORD &dwMaxClockSpeed);
 
-        /****»ñÈ¡Ó²ÅÌĞÅÏ¢****/
+        /****è·å–ç¡¬ç›˜ä¿¡æ¯****/
         void GetDiskInfo(DWORD &dwNum, std::wstring chDriveInfo[]);
 
-        /****»ñÈ¡ÏÔ¿¨ĞÅÏ¢*****/
+        /****è·å–æ˜¾å¡ä¿¡æ¯*****/
         void GetDisplayCardInfo(DWORD &dwNum, std::wstring chCardName[]);
     private:
         static std::wstring _OSName;
-        //std::vector<std::wstring> Interfaces;		                  //±£´æËùÓĞÍø¿¨µÄÃû×Ö
-        //CList < DWORD, DWORD &>		Bandwidths;	  //¸÷Íø¿¨µÄ´ø¿í
-        //CList < DWORD, DWORD &>		TotalTraffics;    //¸÷Íø¿¨µÄ×ÜÁ÷Á¿
+        //std::vector<std::wstring> Interfaces;		                  //ä¿å­˜æ‰€æœ‰ç½‘å¡çš„åå­—
+        //CList < DWORD, DWORD &>		Bandwidths;	  //å„ç½‘å¡çš„å¸¦å®½
+        //CList < DWORD, DWORD &>		TotalTraffics;    //å„ç½‘å¡çš„æ€»æµé‡
     };
 }//namespace hxc
 

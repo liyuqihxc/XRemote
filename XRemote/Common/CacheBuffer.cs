@@ -254,6 +254,7 @@ namespace XRemote.Common
             if (InitSize < 0 || MaxFreeSize < 0 || Construct == null)
                 throw new ArgumentException();
 
+            m_Pool = new Stack<T>();
             m_MaxFreeSize = MaxFreeSize;
             m_Construct = Construct;
             m_Destruct = Destruct;

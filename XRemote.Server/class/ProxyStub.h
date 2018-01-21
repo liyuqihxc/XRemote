@@ -233,15 +233,19 @@ namespace hxc
         {
             using namespace hxc;
             using namespace std;
+            using namespace RPC;
 
             LPBYTE pBuffer = _DataPool::BufferPool().Pop();
-            tcp_stream<BYTE> stream(_ControlSock);
+            tcp_stream<char> stream(_ControlSock);
 
             while (::WaitForSingleObject(_EventStop, 0) == WAIT_TIMEOUT)
             {
                 try
                 {
-                    stream.read(pBuffer, 100);
+                    RpcInvoke invoke;
+                    stream.AcquireReadLock();
+                    bool success = invoke.ParseFromIstream(&stream);
+                    stream.ReleaseReadLock();
                 }
                 catch (const Exception& e)
                 {

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #if !defined _HXC_LOCK_H_
 #define _HXC_LOCK_H_
@@ -10,7 +10,7 @@ namespace hxc
 	public:
 		explicit SRWLock(int SpinDelay = 0);
 		~SRWLock(void);
-		void AcquireExclusive(int SpinCount = -1);//Ğı×ª´ÎÊıÄ¬ÈÏÎª-1£¬¼´Ò»Ö±ÖØÊÔÖ±µ½»ñÈ¡Ëø¡£
+		void AcquireExclusive(int SpinCount = -1);//æ—‹è½¬æ¬¡æ•°é»˜è®¤ä¸º-1ï¼Œå³ä¸€ç›´é‡è¯•ç›´åˆ°è·å–é”ã€‚
 		void AcquireShared(int SpinCount = -1);
 		void ReleaseExclusive(void);
 		void ReleaseShared(void);

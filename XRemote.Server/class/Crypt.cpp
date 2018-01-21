@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "hxc.h"
 #include <cryptdlg.h>
 
@@ -134,7 +134,7 @@ namespace hxc
         }
         if (!SizeIsValid)
         {
-            CryptographicException e(L"·Ç·¨µÄ³õÊ¼»¯ÏòÁ¿³¤¶È¡£");
+            CryptographicException e(L"éæ³•çš„åˆå§‹åŒ–å‘é‡é•¿åº¦ã€‚");
             SET_EXCEPTION(e);
             throw e;
         }
@@ -199,7 +199,7 @@ namespace hxc
         }
         if (!SizeIsValid)
         {
-            CryptographicException e(L"·Ç·¨µÄÃÜÔ¿³¤¶È¡£");
+            CryptographicException e(L"éæ³•çš„å¯†é’¥é•¿åº¦ã€‚");
             SET_EXCEPTION(e);
             throw e;
         }
