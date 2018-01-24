@@ -7,7 +7,7 @@ namespace hxc
 {
 #define SET_EXCEPTION(e) e.set__SourceFileName(__FILE__);e.set__LineNumber(__LINE__);e.set__Function(__FUNCTION__);
 
-    class Exception
+    class Exception : public std::exception
     {
     public:
         Exception();
@@ -33,11 +33,14 @@ namespace hxc
         int get__LineNumber() const;
         void set__LineNumber(int value);
 
+        virtual char const* what() const;
+
         static DWORD NTSTATUS_To_Win32Err(LONG code);
         //void SaveDumpFile();
     protected:
         HRESULT _HResult;
-        std::wstring _Message;
+        std::wstring _MessageW;
+        std::string _MessageA;
         std::wstring _SourceFileName;
         std::wstring _Function;
         int _LineNumber;

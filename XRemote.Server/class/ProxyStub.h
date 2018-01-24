@@ -1,14 +1,17 @@
-#pragma once
+Ôªø#pragma once
 
-#if !defined _BACKDOOR_PROXYSTUB_H_
+#ifndef _BACKDOOR_PROXYSTUB_H_
 #define _BACKDOOR_PROXYSTUB_H_
 
 #include <mstcpip.h>
 //#include "Pool.h"
 #include "xRemoteServer_h.h"
 #include "RPC.pb.h"
+#include "google/protobuf/io/zero_copy_stream.h"
 
 namespace hxc
+{
+namespace rpc
 {
     class _TypeInfoHolder
     {
@@ -126,6 +129,64 @@ namespace hxc
         IDispatchImpl<T, piid, tihclass>::_tih =
     { piid, NULL, NULL, 0 };
 
+    class NetworkInputStream : google::protobuf::io::ZeroCopyInputStream
+    {
+    private:
+        NetworkInputStream(const NetworkInputStream& o) = delete;
+        NetworkInputStream& operator=(const NetworkInputStream& o) = delete;
+    public:
+        explicit NetworkInputStream(tcp_stream& netstream);
+        virtual ~NetworkInputStream();
+    public:
+        virtual bool Next(const void** data, int* size);
+        virtual void BackUp(int count);
+        virtual bool Skip(int count);
+        virtual long long ByteCount() const;
+    public:
+        static bool ReadDelimitedFrom(
+            google::protobuf::io::ZeroCopyInputStream* rawInput,
+            google::protobuf::MessageLite& message
+        );
+    private:
+        DWORD_PTR ReceiveProc(DWORD_PTR Param, HANDLE hCancel);
+    private:
+        const int BufferSize = _DataPool::BufferSize;
+        tcp_stream _stream;
+        QueueBuffer _internal_buffer;
+        Task _recv_task;
+
+        int _head;
+        int _ptr;
+        int _end;
+        LPBYTE _direct_buffer;
+
+        int _backup_head;
+        int _backup_ptr;
+        int _backup_end;
+        LPBYTE _backup_direct_buffer;
+    };
+
+    class NetworkOutputStream : google::protobuf::io::ZeroCopyOutputStream
+    {
+    private:
+        NetworkOutputStream(const NetworkOutputStream& o) {}
+        NetworkOutputStream& operator=(const NetworkOutputStream& o) {}
+    public:
+        explicit NetworkOutputStream(tcp_stream& netstream);
+        virtual ~NetworkOutputStream();
+    public:
+        virtual bool Next(void** data, int* size);
+        virtual void BackUp(int count);
+        virtual long long ByteCount() const;
+        virtual bool WriteAliasedRaw(const void* data, int size);
+        virtual bool AllowsAliasing() const;
+    public:
+        static bool WriteDelimitedTo(
+            const google::protobuf::MessageLite& message,
+            google::protobuf::io::ZeroCopyOutputStream* rawOutput
+        );
+    };
+
     template<class T>
     class CStub :
         public T
@@ -187,7 +248,7 @@ namespace hxc
             pret->_ReceiveTask.Start();
             *ppv = pret;
 
-            pret->AddRef();//“ÚŒ™“˝”√º∆ ˝≥ı º÷µŒ™0
+            pret->AddRef();//Âõ†‰∏∫ÂºïÁî®ËÆ°Êï∞ÂàùÂßãÂÄº‰∏∫0
             return hres;
         }
     public:
@@ -231,23 +292,24 @@ namespace hxc
     protected:
         DWORD_PTR OnReceive(DWORD_PTR Param, HANDLE hCancel)
         {
-            using namespace hxc;
             using namespace std;
             using namespace RPC;
 
             LPBYTE pBuffer = _DataPool::BufferPool().Pop();
-            tcp_stream<char> stream(_ControlSock);
+            tcp_stream stream(_ControlSock.get__Client());
+            NetworkInputStream nis(stream);
 
             while (::WaitForSingleObject(_EventStop, 0) == WAIT_TIMEOUT)
             {
                 try
                 {
                     RpcInvoke invoke;
-                    stream.AcquireReadLock();
-                    bool success = invoke.ParseFromIstream(&stream);
-                    stream.ReleaseReadLock();
+                    if (NetworkInputStream::ReadDelimitedFrom(&nis, invoke))
+                    {
+
+                    }
                 }
-                catch (const Exception& e)
+                catch (const Exception&)
                 {
                     break;
                 }
@@ -283,6 +345,7 @@ namespace hxc
         const GUID& ObjGUID;
     } OBJECT_ENTRY, *POBJECT_ENTRY;
 
+};//namespace rpc
 };//namespace hxc
 
 #endif//if !defined _BACKDOOR_PROXYSTUB_H_

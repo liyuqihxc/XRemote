@@ -1,6 +1,27 @@
 #include "stdafx.h"
 #include "hxc.h"
 
+hxc::ObjectPool<HANDLE>& hxc::_DataPool::ManualResetEventPool()
+{
+    if (!sm_pManualResetEventPool)
+        Initialize();
+    return *sm_pManualResetEventPool;
+}
+
+hxc::ObjectPool<SOCKET>& hxc::_DataPool::TCPSocketPool()
+{
+    if (!sm_pTCPSocketPool)
+        Initialize();
+    return *sm_pTCPSocketPool;
+}
+
+hxc::ObjectPool<BYTE*>& hxc::_DataPool::BufferPool()
+{
+    if (!sm_pBufferPool)
+        Initialize();
+    return *sm_pBufferPool;
+}
+
 void hxc::_DataPool::Initialize()
 {
     using namespace hxc;

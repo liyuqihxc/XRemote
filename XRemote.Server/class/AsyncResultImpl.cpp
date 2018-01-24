@@ -40,7 +40,7 @@ void hxc::AsyncResultImpl::Complete(DWORD ErrCode, bool CompletedSynchronously)
         {
             _Callback(shared_from_this());
         }
-        catch (const Exception& e)
+        catch (const Exception&)
         {
 
         }

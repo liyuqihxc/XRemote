@@ -4,7 +4,7 @@
 #define _CLASSFACTORYSTUB_H_
 
 class ClassFactoryImpl :
-    public hxc::IDispatchImpl<IRemoteClassFactory>
+    public hxc::rpc::IDispatchImpl<IRemoteClassFactory>
 {
 public:
     STDMETHOD(CreateInstance)(
@@ -13,7 +13,7 @@ public:
         );
     STDMETHOD(LockServer)(BOOL fLock);
 protected:
-    typedef hxc::CStub<ClassFactoryImpl> _thisclass;
+    typedef hxc::rpc::CStub<ClassFactoryImpl> _thisclass;
     typedef struct _Interface_Entry
     {
         const IID* riid;

@@ -3,17 +3,17 @@
 #ifndef _HXC_H_
 #define _HXC_H_
 
+#include <exception>
 #include <memory>
 #include <list>
 #include <vector>
 #include <map>
 #include <stack>
 #include <queue>
-#include<strsafe.h>
 #include <string>
 #include <functional>
 
-#include<strsafe.h>
+#include <strsafe.h>
 #include <combaseapi.h>
 #include <Unknwn.h>
 #include <WinSock2.h>
@@ -88,6 +88,7 @@ namespace hxc
 #include "Crypt.h"
 #include "Pool.h"
 #include "Tasks.h"
+#include "stream.h"
 #include "Network.h"
 #include "ProxyStub.h"
 #include "Service.h"

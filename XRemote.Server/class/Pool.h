@@ -87,24 +87,9 @@ namespace hxc
     class _DataPool
     {
     public:
-        static inline ObjectPool<HANDLE>& ManualResetEventPool()
-        {
-            if (!sm_pManualResetEventPool)
-                Initialize();
-            return *sm_pManualResetEventPool;
-        }
-        static inline ObjectPool<SOCKET>& TCPSocketPool()
-        {
-            if (!sm_pTCPSocketPool)
-                Initialize();
-            return *sm_pTCPSocketPool;
-        }
-        static inline ObjectPool<BYTE*>& BufferPool()
-        {
-            if (!sm_pBufferPool)
-                Initialize();
-            return *sm_pBufferPool;
-        }
+        static ObjectPool<HANDLE>& ManualResetEventPool();
+        static ObjectPool<SOCKET>& TCPSocketPool();
+        static ObjectPool<BYTE*>& BufferPool();
 
 	    static void Initialize();
 	    static void Free();

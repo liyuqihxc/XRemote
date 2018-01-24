@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "hxc.h"
 #include <WS2tcpip.h>
 
@@ -144,8 +144,8 @@ namespace hxc
 
     //Critical_Section<std::vector<void*>>  SocketAsyncResultImpl::free_elements;
 
-Socket::Socket() :
-    _AddressFamily(AF_INET), _Connected(false)
+Socket::Socket(int af, int type, int protocol) :
+    _AddressFamily(af), _SocketType(type), _ProtocolType(protocol), _Connected(false)
 {
     if (!pfnAcceptEx)
     {
@@ -153,7 +153,8 @@ Socket::Socket() :
         InitializeWinsock(MAKEWORD(2, 2), &wd);
     }
 
-    s = _DataPool::TCPSocketPool().Pop();
+    //s = _DataPool::TCPSocketPool().Pop();
+    s = ::WSASocket(_AddressFamily, _SocketType, _ProtocolType, nullptr, 0, WSA_FLAG_OVERLAPPED);
     _ASSERT(s != INVALID_SOCKET);
 
     BOOL b = ::BindIoCompletionCallback((HANDLE)s, AsyncResultImpl::IOCompletionRoutine, 0);
@@ -175,9 +176,9 @@ bool Socket::get__Connected()
     return _Connected ? true : false;
 }
 
-std::shared_ptr<Socket> Socket::Create()
+std::shared_ptr<Socket> Socket::Create(int af, int type, int protocol)
 {
-    return std::shared_ptr<Socket>(new Socket());
+    return std::shared_ptr<Socket>(new Socket(af, type, protocol));
 }
 
 std::shared_ptr<IAsyncResult> Socket::BeginAccept(std::shared_ptr<Socket> AcceptSocket, DWORD receiveSize, const ASYNCCALLBACK & Callback, DWORD_PTR Context)
@@ -596,8 +597,8 @@ LPFN_DISCONNECTEX Socket::pfnDisconnectEx;
 LPFN_GETACCEPTEXSOCKADDRS Socket::pfnGetAcceptExSockaddrs;
 
 /************************************************************************/
-/*³õÊ¼»¯WinSock¿â£¬³õÊ¼»¯´´½¨ÄÚ´æ³Ø¡¢Ïß³Ì³Ø²¢µ÷ÓÃ³õÊ¼»¯º¯Êı*/
-/*È¡µÃAcceptExµÈº¯ÊıµÄÖ¸Õë*/
+/*åˆå§‹åŒ–WinSockåº“ï¼Œåˆå§‹åŒ–åˆ›å»ºå†…å­˜æ± ã€çº¿ç¨‹æ± å¹¶è°ƒç”¨åˆå§‹åŒ–å‡½æ•°*/
+/*å–å¾—AcceptExç­‰å‡½æ•°çš„æŒ‡é’ˆ*/
 /************************************************************************/
 void Socket::InitializeWinsock(_In_ WORD wVersionRequested, _Out_ LPWSADATA lpWSAData)
 {
@@ -637,7 +638,7 @@ void Socket::InitializeWinsock(_In_ WORD wVersionRequested, _Out_ LPWSADATA lpWS
 }
 
 /************************************************************************/
-/*Ïú»ÙÄÚ´æ³ØÓëÏß³Ì³Ø£¬ÊÍ·ÅWinSock¿â*/
+/*é”€æ¯å†…å­˜æ± ä¸çº¿ç¨‹æ± ï¼Œé‡Šæ”¾WinSockåº“*/
 /************************************************************************/
 void Socket::UninitializeWinsock()
 {
@@ -660,10 +661,10 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
 
     hxc::Critical_Section<std::map<SOCKET, Socket*>> AcceptSockets;
 
-    TcpClient::TcpClient() : _Socket(Socket::Create())
+    TcpClient::TcpClient(int AddressFamily) : _Socket(Socket::Create(AddressFamily, SOCK_STREAM, IPPROTO_TCP))
     {
         sockaddr_in sock = {};
-        sock.sin_family = AF_INET;
+        sock.sin_family = _Socket->get__AddressFamily();
         //sock.sin_addr.S_un.S_addr = INADDR_ANY;
         _Socket->Bind(reinterpret_cast<sockaddr*>(&sock), sizeof(sockaddr_in));
     }
@@ -716,10 +717,8 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
         DWORD dwFlags
     )
     {
-        using namespace std;
-
         auto ai = _Socket->BeginSend(lpBuffer, cbBuffer, dwFlags, nullptr, NULL);
-        auto endMethod = [this](shared_ptr<IAsyncResult> async)
+        auto endMethod = [this](std::shared_ptr<IAsyncResult> async)
         {
             DWORD_PTR ret = static_cast<DWORD_PTR>(_Socket->EndSend(async));
             return ret;
@@ -766,7 +765,68 @@ void Socket::UpdateStatusAfterSocketError(int errorCode)
 
     SocketException::SocketException(int WSAErrorCode) : Exception(HRESULT_FROM_WIN32(WSAErrorCode))
     {
-        _Message = Win32Exception::FormatErrorMessage(static_cast<DWORD>(WSAErrorCode));
+        _MessageW = Win32Exception::FormatErrorMessage(static_cast<DWORD>(WSAErrorCode));
+    }
+
+    tcp_stream::tcp_stream(const tcp_stream & o)
+    {
+        _socket = o._socket;
+    }
+
+    tcp_stream::tcp_stream(std::shared_ptr<Socket> socket) :
+        _socket(socket)
+    {
+    }
+
+    tcp_stream::~tcp_stream()
+    {
+    }
+
+    tcp_stream & tcp_stream::operator=(const tcp_stream & o)
+    {
+        if (this != &o)
+        {
+            _socket = o._socket;
+        }
+        return *this;
+    }
+
+    int tcp_stream::Read(LPBYTE buffer, int offset, int count)
+    {
+        Task t = ReadAsync(buffer, offset, count);
+        t.Wait();
+        return t.get__Result();
+    }
+
+    Task tcp_stream::ReadAsync(LPBYTE buffer, int offset, int count)
+    {
+        LPDWORD lpdwFlags = new DWORD(0);
+        auto ai = _socket->BeginReceive(&buffer[offset], count, lpdwFlags, nullptr, NULL);
+        auto endMethod = [this, lpdwFlags](std::shared_ptr<IAsyncResult> async)
+        {
+            DWORD_PTR ret = static_cast<DWORD_PTR>(_socket->EndReceive(async));
+            delete lpdwFlags;
+            return ret;
+        };
+        return Task::FromAsync1(ai, endMethod);
+    }
+
+    int tcp_stream::Write(const LPBYTE buffer, int offset, int count)
+    {
+        Task t = WriteAsync(buffer, offset, count);
+        t.Wait();
+        return t.get__Result();
+    }
+
+    Task tcp_stream::WriteAsync(const LPBYTE buffer, int offset, int count)
+    {
+        DWORD dwFlags = 0;
+        auto ai = _socket->BeginSend(&buffer[offset], count, dwFlags, nullptr, NULL);
+        auto endMethod = [this](std::shared_ptr<IAsyncResult> async)
+        {
+            return static_cast<DWORD_PTR>(_socket->EndSend(async));
+        };
+        return Task::FromAsync1(ai, endMethod);
     }
 
 };	//namespace hxc

@@ -17,8 +17,8 @@ private:
     static DWORD_PTR EstablishConnection(DWORD_PTR Param, HANDLE hCancel);
 private:
     static hxc::TcpClient _Connection;
-    static std::unique_ptr<hxc::CStub<ClassFactoryImpl>> _ClassFactoryStub;
-    static std::unique_ptr<hxc::Task> _EstablishConnectionTask;
+    static std::unique_ptr<hxc::rpc::CStub<ClassFactoryImpl>> _ClassFactoryStub;
+    static hxc::Task _EstablishConnectionTask;
 };
 
 #endif// if !defined _NETWORKMANAGER_H_

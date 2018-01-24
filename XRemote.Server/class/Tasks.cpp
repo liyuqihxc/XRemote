@@ -38,9 +38,9 @@ hxc::Task::Task(hxc::Task::TASK_CONTEXT * p) : m_pTaskContext(p)
 {
 }
 
-DWORD_PTR hxc::Task::get_Result()
+DWORD_PTR hxc::Task::get__Result()
 {
-    return m_pTaskContext->get_Result();
+    return m_pTaskContext->get__Result();
 }
 
 std::vector<DWORD_PTR>& hxc::Task::get_InternalParams()
@@ -113,10 +113,10 @@ DWORD WINAPI hxc::Task::_TaskContext::ThreadPoolCallback(PVOID Param)
         ret = pctx->m_Proc(pctx->m_Params, pctx->m_hEventCancel);
         pctx->m_Status = TaskStatus::RanToCompletion;
     }
-    catch (const Exception& e)
+    catch (const Exception&)
     {
         pctx->m_Status = TaskStatus::Faulted;
-        pctx->m_Exception = e;
+        pctx->m_Exception = std::current_exception();
     }
 
     ::EnterCriticalSection(&pctx->m_Lock);
@@ -185,7 +185,7 @@ void hxc::Task::_TaskContext::Wait(DWORD millisecondsTimeout)
     }
 
     if (m_Status == Faulted)
-        throw m_Exception;
+        std::rethrow_exception(m_Exception);
 }
 
 void hxc::Task::_TaskContext::Cancel(bool WaitEnd)
@@ -212,7 +212,7 @@ hxc::Task hxc::Task::_TaskContext::ContinueWith(std::function<DWORD_PTR(Task)> d
     return t;
 }
 
-DWORD_PTR hxc::Task::_TaskContext::get_Result()
+DWORD_PTR hxc::Task::_TaskContext::get__Result()
 {
     ::EnterCriticalSection(&m_Lock);
     if (m_Status == RanToCompletion)

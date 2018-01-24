@@ -5,6 +5,8 @@
 
 namespace hxc
 {
+namespace io
+{
     enum SeekOrigin
     {
         Begin,
@@ -49,6 +51,7 @@ namespace hxc
         std::list<LPBYTE> Buffers_Filled;
         CRITICAL_SECTION m_Lock;
     };
-}
+}//namespace io
+}//namespace hxc
 
 #endif // !defined _MEMORYSTREAM_H_

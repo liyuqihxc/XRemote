@@ -28,7 +28,7 @@ namespace hxc
     private:
         Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags, bool IsOverlappedTask);
     public:
-        DWORD_PTR get_Result();
+        DWORD_PTR get__Result();
 
     public:
         void Start();
@@ -74,7 +74,7 @@ namespace hxc
             void Cancel(bool WaitEnd = true);
             Task ContinueWith(std::function<DWORD_PTR(Task)> delegate, ULONG Flags);
 
-            DWORD_PTR get_Result();
+            DWORD_PTR get__Result();
             std::vector<DWORD_PTR>& get_InternalParams();
 
             void AddRef(void);
@@ -90,7 +90,7 @@ namespace hxc
             TaskStatus m_Status;
             LONG m_CreationFlags;
             volatile LONG m_Ref;
-            Exception m_Exception;
+            std::exception_ptr m_Exception;
             bool m_IsOverlappedTask;
             std::shared_ptr<AsyncResultImpl> m_AsyncContext;
         } TASK_CONTEXT;

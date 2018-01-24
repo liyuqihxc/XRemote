@@ -5,13 +5,14 @@ namespace hxc
 {
     Exception::Exception() : _HResult(S_OK), _LineNumber(-1)
     {
-
+        
     }
 
     Exception::Exception(const Exception & e)
     {
         _HResult = e._HResult;
-        _Message = e._Message;
+        _MessageW = e._MessageW;
+        _MessageA = e._MessageA;
         _SourceFileName = e._SourceFileName;
         _Function = e._Function;
         _LineNumber = e._LineNumber;
@@ -22,7 +23,8 @@ namespace hxc
         if (this != &e)
         {
             _HResult = e._HResult;
-            _Message = e._Message;
+            _MessageW = e._MessageW;
+            _MessageA = e._MessageA;
             _SourceFileName = e._SourceFileName;
             _Function = e._Function;
             _LineNumber = e._LineNumber;
@@ -37,18 +39,22 @@ namespace hxc
     }
 
     Exception::Exception(const std::wstring & Message) :
-        _Message(Message), _HResult(E_FAIL), _LineNumber(-1)
+        _MessageW(Message), _HResult(E_FAIL), _LineNumber(-1)
     {
-
+        int num = WideCharToMultiByte(CP_ACP, 0, _MessageW.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        LPSTR str = new CHAR[num];
+        WideCharToMultiByte(CP_ACP, 0, _MessageW.c_str(), -1, str, num, nullptr, nullptr);
+        _MessageA = str;
+        delete[] str;
     }
 
     HRESULT Exception::get__HResult() const { return _HResult; }
 
     void Exception::set__HResult(HRESULT value) { _HResult = value; }
 
-    const std::wstring & Exception::get__Message() const { return _Message; }
+    const std::wstring & Exception::get__Message() const { return _MessageW; }
 
-    void Exception::set__Message(const std::wstring & value) { _Message = value; }
+    void Exception::set__Message(const std::wstring & value) { _MessageW = value; }
 
     const std::wstring & Exception::get__SourceFileName() const { return _SourceFileName; }
 
@@ -79,6 +85,11 @@ namespace hxc
     int Exception::get__LineNumber() const { return _LineNumber; }
 
     void Exception::set__LineNumber(int value) { _LineNumber = value; }
+
+    char const * Exception::what() const
+    {
+        return _MessageA.c_str();
+    }
 
     DWORD Exception::NTSTATUS_To_Win32Err(LONG code)
     {
@@ -125,7 +136,7 @@ namespace hxc
 
     Win32Exception::Win32Exception(DWORD dwWin32Error) : Exception(HRESULT_FROM_WIN32(dwWin32Error))
     {
-        _Message = FormatErrorMessage(dwWin32Error);
+        _MessageW = FormatErrorMessage(dwWin32Error);
     }
 
     std::wstring Win32Exception::FormatErrorMessage(DWORD dwWin32Error)

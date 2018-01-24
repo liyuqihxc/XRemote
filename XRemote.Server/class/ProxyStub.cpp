@@ -1,9 +1,12 @@
 #include "stdafx.h"
 #include "hxc.h"
+#include "ProxyStub_imp.h"
 #include <Ws2tcpip.h>
 #include "Res.h"
 
 namespace hxc
+{
+namespace rpc
 {
     HRESULT _TypeInfoHolder::GetTI(LCID lcid, ITypeInfo ** ppInfo)
     {
@@ -185,4 +188,87 @@ namespace hxc
         return S_OK;
     }
 
-}
+    NetworkInputStream::NetworkInputStream(tcp_stream & netstream) :
+        _stream(netstream), _direct_buffer(_DataPool::BufferPool().Pop()),
+        _head(0), _ptr(0), _end(0),
+        _backup_direct_buffer(_DataPool::BufferPool().Pop()),
+        _backup_head(0), _backup_ptr(0), _backup_end(0),
+        _recv_task(Task::BindFunction(&NetworkInputStream::ReceiveProc, this), NULL)
+    {
+
+    }
+
+    NetworkInputStream::~NetworkInputStream()
+    {
+        _DataPool::BufferPool().Push(_direct_buffer);
+        _DataPool::BufferPool().Push(_backup_direct_buffer);
+    }
+
+    bool NetworkInputStream::Next(const void ** data, int * size)
+    {
+
+        return true;
+    }
+
+    void NetworkInputStream::BackUp(int count)
+    {
+        
+    }
+
+    bool NetworkInputStream::ReadDelimitedFrom(google::protobuf::io::ZeroCopyInputStream * rawInput, google::protobuf::MessageLite & message)
+    {
+        // We create a new coded stream for each message.  Don't worry, this is fast,
+        // and it makes sure the 64MB total size limit is imposed per-message rather
+        // than on the whole stream.  (See the CodedInputStream interface for more
+        // info on this limit.)
+        google::protobuf::io::CodedInputStream input(rawInput);
+
+        // Read the size.
+        uint32_t size;
+        if (!input.ReadVarint32(&size)) return false;
+
+        // Tell the stream not to read beyond that size.
+        google::protobuf::io::CodedInputStream::Limit limit =
+            input.PushLimit(size);
+
+        // Parse the message.
+        if (!message.MergeFromCodedStream(&input)) return false;
+        if (!input.ConsumedEntireMessage()) return false;
+
+        // Release the limit.
+        input.PopLimit(limit);
+
+        return true;
+    }
+
+    DWORD_PTR NetworkInputStream::ReceiveProc(DWORD_PTR Param, HANDLE hCancel)
+    {
+        //_stream.ReadAsync()
+    }
+
+    bool NetworkOutputStream::WriteDelimitedTo(const google::protobuf::MessageLite & message, google::protobuf::io::ZeroCopyOutputStream * rawOutput)
+    {
+        // We create a new coded stream for each message.  Don't worry, this is fast.
+        google::protobuf::io::CodedOutputStream output(rawOutput);
+
+        // Write the size.
+        const int size = message.ByteSize();
+        output.WriteVarint32(size);
+
+        uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
+        if (buffer != NULL) {
+            // Optimization:  The message fits in one buffer, so use the faster
+            // direct-to-array serialization path.
+            message.SerializeWithCachedSizesToArray(buffer);
+        }
+        else {
+            // Slightly-slower path when the message is multiple buffers.
+            message.SerializeWithCachedSizes(&output);
+            if (output.HadError()) return false;
+        }
+
+        return true;
+    }
+
+};//namespace rpc
+};//namespace hxc
