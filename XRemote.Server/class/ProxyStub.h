@@ -129,7 +129,7 @@ namespace rpc
         IDispatchImpl<T, piid, tihclass>::_tih =
     { piid, NULL, NULL, 0 };
 
-    class NetworkInputStream : google::protobuf::io::ZeroCopyInputStream
+    class NetworkInputStream : public google::protobuf::io::ZeroCopyInputStream
     {
     private:
         NetworkInputStream(const NetworkInputStream& o) = delete;
@@ -152,7 +152,7 @@ namespace rpc
     private:
         const int BufferSize = _DataPool::BufferSize;
         tcp_stream _stream;
-        QueueBuffer _internal_buffer;
+        io::QueueBuffer _internal_buffer;
         Task _recv_task;
 
         int _head;
@@ -166,7 +166,7 @@ namespace rpc
         LPBYTE _backup_direct_buffer;
     };
 
-    class NetworkOutputStream : google::protobuf::io::ZeroCopyOutputStream
+    class NetworkOutputStream : public google::protobuf::io::ZeroCopyOutputStream
     {
     private:
         NetworkOutputStream(const NetworkOutputStream& o) {}

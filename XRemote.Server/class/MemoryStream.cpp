@@ -3,6 +3,8 @@
 
 namespace hxc
 {
+namespace io
+{
     QueueBuffer::QueueBuffer() : CurrentBufferIndex(0)
     {
         InitializeCriticalSection(&m_Lock);
@@ -159,4 +161,5 @@ namespace hxc
         
         return len;
     }
-}
+}// namespace io
+}// namespace hxc

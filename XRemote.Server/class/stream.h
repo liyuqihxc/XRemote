@@ -11,19 +11,20 @@ namespace io
     {
     private:
         friend class ZeroCopyStream;
-        ZeroCopyBuffer(std::shared_ptr<BYTE>& Buffer, int BufferSize);
+        ZeroCopyBuffer(std::shared_ptr<BYTE>& buffer, int offset, int size);
     public:
         ZeroCopyBuffer();
         ZeroCopyBuffer(const ZeroCopyBuffer& o);
         ZeroCopyBuffer& operator=(const ZeroCopyBuffer& o);
-        LPBYTE get__BufferPointer() { return _buffer.get(); }
+        LPBYTE get__BufferPointer() { return &_buffer.get()[_buffer_start_index]; }
         int get__BufferSize() const { return _buffer_size; }
-        void set__DataSize(int DataSize) { _data_size = DataSize; }
-        int get__DataSize() const { return _data_size; }
+        //void set__DataSize(int DataSize) { _data_size = DataSize; }
+        //int get__DataSize() const { return _data_size; }
     private:
         std::shared_ptr<BYTE> _buffer;
+        int _buffer_start_index;
         int _buffer_size;
-        int _data_size;
+        //int _data_size;
     };
 
     class ZeroCopyStream
@@ -41,14 +42,21 @@ namespace io
         int Read(int count, ZeroCopyBuffer& buffer);
         virtual Task ReadAsync(int count, ZeroCopyBuffer& buffer) = 0;
 
-        ZeroCopyBuffer StartWrite();
+        virtual ZeroCopyBuffer StartWrite() = 0;
         int DoWrite(ZeroCopyBuffer& buffer);
         virtual Task DoWriteAsync(ZeroCopyBuffer& buffer) = 0;
 
-        virtual void Flush(void);
+        virtual Task Flush(void);
     protected:
         CRITICAL_SECTION _SyncRoot;
-        ObjectPool<LPBYTE> _FreeBuffers;
+
+        LPBYTE _eback;
+        LPBYTE _gptr;
+        LPBYTE _egptr;
+
+        LPBYTE _pbase;
+        LPBYTE _pptr;
+        LPBYTE _epptr;
     };
 }
 }

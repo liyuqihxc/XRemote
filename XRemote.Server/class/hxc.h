@@ -77,7 +77,26 @@ namespace hxc
         virtual bool get__CompletedSynchronously();
         virtual bool get__IsCompleted();
     };
-}
+
+    template<typename T>
+    class ArraySegment
+    {
+    public:
+        ArraySegment(const ArraySegment& o);
+        ArraySegment(T* p, int offset, int count);
+        ~ArraySegment();
+    public:
+        ArraySegment & operator=(const ArraySegment& o);
+        T* get__HeadPtr() const;
+        T* get__BackPtr() const;
+        int get__Count() const;
+    private:
+        T * _HeadPtr;
+        T* _BackPtr;
+        int _Count;
+    };
+
+}// namespace hxc
 
 #include "Exceptions.h"
 #include "Locks.h"

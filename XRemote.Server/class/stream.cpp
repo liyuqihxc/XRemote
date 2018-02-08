@@ -5,14 +5,14 @@ namespace hxc
 {
 namespace io
 {
-    ZeroCopyBuffer::ZeroCopyBuffer(std::shared_ptr<BYTE>& Buffer, int BufferSize) :
-        _buffer_size(BufferSize), _buffer(Buffer), _data_size(0)
+    ZeroCopyBuffer::ZeroCopyBuffer(std::shared_ptr<BYTE>& buffer, int offset, int size) :
+        _buffer_size(size), _buffer(buffer), _buffer_start_index(offset)//, _data_size(0)
     {
         
     }
 
     ZeroCopyBuffer::ZeroCopyBuffer() :
-        _buffer_size(0), _buffer(nullptr), _data_size(0)
+        _buffer_size(0), _buffer(nullptr), _buffer_start_index(0)//, _data_size(0)
     {
 
     }
@@ -21,7 +21,7 @@ namespace io
     {
         _buffer = o._buffer;
         _buffer_size = o._buffer_size;
-        _data_size = o._data_size;
+        //_data_size = o._data_size;
     }
 
     ZeroCopyBuffer & ZeroCopyBuffer::operator=(const ZeroCopyBuffer & o)
@@ -30,13 +30,14 @@ namespace io
         {
             _buffer = o._buffer;
             _buffer_size = o._buffer_size;
-            _data_size = o._data_size;
+            //_data_size = o._data_size;
         }
         return *this;
     }
 
     ZeroCopyStream::ZeroCopyStream() :
-        _FreeBuffers(5, 5, []() { return _DataPool::BufferPool().Pop(); }, nullptr, [](BYTE*& p) { _DataPool::BufferPool().Push(p); })
+        _eback(nullptr), _gptr(nullptr), _egptr(nullptr),
+        _pbase(nullptr), _pptr(nullptr), _epptr(nullptr)
     {
         ::InitializeCriticalSection(&_SyncRoot);
     }
@@ -50,23 +51,19 @@ namespace io
     {
         Task t = ReadAsync(count, buffer);
         t.Wait();
-        return buffer.get__DataSize();
+        return buffer.get__BufferSize();
     }
 
-    ZeroCopyBuffer ZeroCopyStream::StartWrite()
-    {
-        return ZeroCopyBuffer(std::shared_ptr<BYTE>(_FreeBuffers.Pop(), [this](LPBYTE p) { _FreeBuffers.Push(p); }), _DataPool::BufferSize);
-    }
-
-    int ZeroCopyStream::DoWrite(ZeroCopyBuffer & buffer)
+    int ZeroCopyStream::DoWrite(ZeroCopyBuffer& buffer)
     {
         Task t = DoWriteAsync(buffer);
         t.Wait();
         return t.get__Result();
     }
 
-    void ZeroCopyStream::Flush(void)
+    Task ZeroCopyStream::Flush(void)
     {
+        return Task::get__CompletedTask();
     }
 }//namespace io
 }//namespace hxc

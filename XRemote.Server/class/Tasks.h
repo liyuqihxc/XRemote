@@ -29,7 +29,7 @@ namespace hxc
         Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags, bool IsOverlappedTask);
     public:
         DWORD_PTR get__Result();
-
+        static Task get__CompletedTask();
     public:
         void Start();
         void Wait(DWORD millisecondsTimeout = INFINITE);
