@@ -4,6 +4,8 @@
 #include <Ws2tcpip.h>
 #include "Res.h"
 
+extern "C" IMAGE_DOS_HEADER __ImageBase;
+
 namespace hxc
 {
 namespace rpc
@@ -40,7 +42,7 @@ namespace rpc
             ITypeLib* pTypeLib = NULL;
             {
                 TCHAR szFilePath[MAX_PATH];
-                DWORD dwFLen = ::GetModuleFileNameW(nullptr, szFilePath, MAX_PATH);
+                DWORD dwFLen = ::GetModuleFileNameW(reinterpret_cast<HMODULE>(&__ImageBase), szFilePath, MAX_PATH);
                 if (dwFLen != 0 && dwFLen != MAX_PATH)
                 {
                     LPOLESTR pszFile = szFilePath;
