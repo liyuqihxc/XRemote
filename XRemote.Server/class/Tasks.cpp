@@ -29,6 +29,11 @@ hxc::Task::~Task()
     m_pTaskContext->Release();
 }
 
+hxc::Task::Task() : m_pTaskContext(new TASK_CONTEXT)
+{
+
+}
+
 hxc::Task::Task(const FUNCTION & function, DWORD_PTR Params, ULONG Flags, bool NoCancel) :
     m_pTaskContext(new TASK_CONTEXT(function, Params, Flags, NoCancel))
 {
@@ -41,6 +46,11 @@ hxc::Task::Task(hxc::Task::TASK_CONTEXT * p) : m_pTaskContext(p)
 DWORD_PTR hxc::Task::get__Result()
 {
     return m_pTaskContext->get__Result();
+}
+
+hxc::Task hxc::Task::get__CompletedTask()
+{
+    return Task();
 }
 
 std::vector<DWORD_PTR>& hxc::Task::get_InternalParams()
@@ -111,7 +121,9 @@ DWORD WINAPI hxc::Task::_TaskContext::ThreadPoolCallback(PVOID Param)
     try
     {
         ret = pctx->m_Proc(pctx->m_Params, pctx->m_hEventCancel);
+        ::EnterCriticalSection(&pctx->m_Lock);
         pctx->m_Status = TaskStatus::RanToCompletion;
+        ::LeaveCriticalSection(&pctx->m_Lock);
     }
     catch (const Exception&)
     {
@@ -148,6 +160,13 @@ hxc::Task::_TaskContext::_TaskContext(const FUNCTION& function, DWORD_PTR Params
     }
 }
 
+hxc::Task::_TaskContext::_TaskContext() :
+    m_Proc(nullptr), m_Params(NULL), m_hEventWait(NULL), m_Result(0), m_CreationFlags(0), m_Ref(1),
+    m_Status(TaskStatus::RanToCompletion), m_hEventCancel(NULL), m_IsOverlappedTask(true)
+{
+    
+}
+
 hxc::Task::_TaskContext::~_TaskContext()
 {
     _ASSERT(m_Ref == 0);
@@ -158,21 +177,24 @@ hxc::Task::_TaskContext::~_TaskContext()
 
 void hxc::Task::_TaskContext::Start()
 {
+    if (m_Status != TaskStatus::Created)
+        throw InvalidOperationException();
+
     ::EnterCriticalSection(&m_Lock);
-    if (::QueueUserWorkItem(ThreadPoolCallback, this, m_CreationFlags))
-        m_Status = TaskStatus::WaitingToRun;
-    else
+    m_Status = TaskStatus::WaitingToRun;
+    if (!::QueueUserWorkItem(ThreadPoolCallback, this, m_CreationFlags))
         throw Win32Exception(::GetLastError());
     ::LeaveCriticalSection(&m_Lock);
 }
 
 void hxc::Task::_TaskContext::Wait(DWORD millisecondsTimeout)
 {
+    ::EnterCriticalSection(&m_Lock);
+
     if (m_Status == TaskStatus::Running || m_Status == TaskStatus::WaitingToRun || m_Status == Created)
     {
         if (m_Status == TaskStatus::Created)
             Start();
-        ::EnterCriticalSection(&m_Lock);
         if (m_hEventWait == NULL)
             m_hEventWait = _DataPool::ManualResetEventPool().Pop();
         HANDLE hEvent = m_hEventWait;
@@ -181,19 +203,29 @@ void hxc::Task::_TaskContext::Wait(DWORD millisecondsTimeout)
     }
     else if (m_Status != RanToCompletion)
     {
+        ::LeaveCriticalSection(&m_Lock);
         throw InvalidOperationException();
     }
-
-    if (m_Status == Faulted)
+    else if (m_Status == Faulted)
+    {
+        ::LeaveCriticalSection(&m_Lock);
         std::rethrow_exception(m_Exception);
+    }
 }
 
 void hxc::Task::_TaskContext::Cancel(bool WaitEnd)
 {
-    if (!m_IsOverlappedTask)
-        ::SetEvent(m_hEventCancel);
+    ::EnterCriticalSection(&m_Lock);
+    if (m_Status != RanToCompletion && m_Status != Canceled && m_Status != Faulted)
+    {
+        m_IsOverlappedTask ? m_AsyncContext->CancelIo() : ::SetEvent(m_hEventCancel);
+    }
     else
-        m_AsyncContext->CancelIo();
+    {
+        ::LeaveCriticalSection(&m_Lock);
+        return;
+    }
+    ::LeaveCriticalSection(&m_Lock);
 
     if (WaitEnd)
         Wait(INFINITE);
@@ -201,6 +233,11 @@ void hxc::Task::_TaskContext::Cancel(bool WaitEnd)
 
 hxc::Task hxc::Task::_TaskContext::ContinueWith(std::function<DWORD_PTR(Task)> delegate, ULONG Flags)
 {
+    ::EnterCriticalSection(&m_Lock);
+    if (m_Status == Faulted || m_Status == Canceled || m_Status == RanToCompletion)
+        throw InvalidOperationException();
+    ::LeaveCriticalSection(&m_Lock);
+
     std::function<DWORD_PTR(Task)> Delegate(delegate);
     Task t([Delegate](DWORD_PTR Param, HANDLE hCancel)
     {
@@ -208,6 +245,7 @@ hxc::Task hxc::Task::_TaskContext::ContinueWith(std::function<DWORD_PTR(Task)> d
         t.Wait();
         return Delegate(t);
     }, reinterpret_cast<DWORD_PTR>(this), Flags);
+
     t.Start();
     return t;
 }
@@ -215,15 +253,26 @@ hxc::Task hxc::Task::_TaskContext::ContinueWith(std::function<DWORD_PTR(Task)> d
 DWORD_PTR hxc::Task::_TaskContext::get__Result()
 {
     ::EnterCriticalSection(&m_Lock);
-    if (m_Status == RanToCompletion)
+    if (m_Status == TaskStatus::Running || m_Status == TaskStatus::WaitingToRun)
+    {
+        ::LeaveCriticalSection(&m_Lock);
+        Wait(INFINITE);
+        return m_Result;
+    }
+    else if (m_Status == RanToCompletion)
     {
         ::LeaveCriticalSection(&m_Lock);
         return m_Result;
     }
-    else
+    else if (m_Status == TaskStatus::Canceled)
     {
         ::LeaveCriticalSection(&m_Lock);
         throw InvalidOperationException();
+    }
+    else if (m_Exception != nullptr)
+    {
+        ::LeaveCriticalSection(&m_Lock);
+        std::rethrow_exception(m_Exception);
     }
 }
 

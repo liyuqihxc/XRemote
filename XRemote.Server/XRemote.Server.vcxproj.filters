@@ -57,9 +57,6 @@
     <ClInclude Include="class\hxc.h">
       <Filter>class</Filter>
     </ClInclude>
-    <ClInclude Include="class\Event.h">
-      <Filter>class</Filter>
-    </ClInclude>
     <ClInclude Include="class\stdTrunk.hpp">
       <Filter>class</Filter>
     </ClInclude>
@@ -92,15 +89,6 @@
     </ClInclude>
     <ClInclude Include="ClassFactoryImpl.h">
       <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="class\MemoryStream.h">
-      <Filter>class</Filter>
-    </ClInclude>
-    <ClInclude Include="class\ProxyStub_imp.h">
-      <Filter>class</Filter>
-    </ClInclude>
-    <ClInclude Include="class\stream.h">
-      <Filter>class</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -158,17 +146,8 @@
     <ClCompile Include="NetworkManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="class\MemoryStream.cpp">
-      <Filter>class</Filter>
-    </ClCompile>
     <ClCompile Include="ClassFactoryImpl.cpp">
       <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="class\ProxyStub_imp.cpp">
-      <Filter>class</Filter>
-    </ClCompile>
-    <ClCompile Include="class\stream.cpp">
-      <Filter>class</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

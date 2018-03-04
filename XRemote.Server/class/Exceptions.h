@@ -86,6 +86,11 @@ namespace hxc
         //InvalidOperationException() {}
     };
 
+    class NotSupportedException : public Exception
+    {
+    public:
+    };
+
     class NullReferenceException : public Exception
     {
     public:

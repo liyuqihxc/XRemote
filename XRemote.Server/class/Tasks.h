@@ -11,7 +11,7 @@ namespace hxc
         WaitingToRun,
         Running,
         RanToCompletion,
-        //Canceled,
+        Canceled,
         Faulted
     };
 
@@ -20,12 +20,12 @@ namespace hxc
     public:
         typedef std::function<DWORD_PTR(DWORD_PTR, HANDLE)> FUNCTION;
 
-        Task() = delete;
         Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags = WT_EXECUTEDEFAULT);
         Task(const Task& t);
         Task& operator=(const Task& t);
         ~Task();
     private:
+        Task();
         Task(const FUNCTION& function, DWORD_PTR Params, ULONG Flags, bool IsOverlappedTask);
     public:
         DWORD_PTR get__Result();
@@ -66,7 +66,7 @@ namespace hxc
             _TaskContext(const FUNCTION& function, DWORD_PTR Params, LONG Flags, bool IsOverlappedTask);
             _TaskContext(const _TaskContext&) = delete;
             _TaskContext& operator=(const _TaskContext&) = delete;
-            _TaskContext() = delete;
+            _TaskContext();
             ~_TaskContext();
 
             void Start();
@@ -85,9 +85,9 @@ namespace hxc
             FUNCTION m_Proc;
             DWORD_PTR m_Params;
             std::vector<DWORD_PTR> m_InternalParams;
-            DWORD_PTR m_Result;
+            volatile DWORD_PTR m_Result;
+            volatile TaskStatus m_Status;
             CRITICAL_SECTION m_Lock;
-            TaskStatus m_Status;
             LONG m_CreationFlags;
             volatile LONG m_Ref;
             std::exception_ptr m_Exception;

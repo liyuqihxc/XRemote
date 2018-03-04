@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "hxc.h"
-#include "ProxyStub_imp.h"
 #include <Ws2tcpip.h>
 #include "Res.h"
+#include <algorithm>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -190,34 +191,123 @@ namespace rpc
         return S_OK;
     }
 
-    NetworkInputStream::NetworkInputStream(tcp_stream & netstream) :
-        _stream(netstream), _direct_buffer(_DataPool::BufferPool().Pop()),
-        _head(0), _ptr(0), _end(0),
-        _backup_direct_buffer(_DataPool::BufferPool().Pop()),
-        _backup_head(0), _backup_ptr(0), _backup_end(0),
-        _recv_task(Task::BindFunction(&NetworkInputStream::ReceiveProc, this), NULL)
+    ZeroCopyNetworkInputStream::ZeroCopyNetworkInputStream(tcp_stream & tcp_stream, int capacity) :
+        _buffer((uint8_t*)malloc(capacity)), _capacity(capacity), _tcp_stream(tcp_stream), _signal(CreateEvent(nullptr, true, false, nullptr)),
+        _head(0), _ptr(0), _recv_task(Task::BindFunction(&ZeroCopyNetworkInputStream::ReceiveProc, this), NULL)
     {
-
+        _recv_task.Start();
     }
 
-    NetworkInputStream::~NetworkInputStream()
+    ZeroCopyNetworkInputStream::~ZeroCopyNetworkInputStream()
     {
-        _DataPool::BufferPool().Push(_direct_buffer);
-        _DataPool::BufferPool().Push(_backup_direct_buffer);
+        _recv_task.Cancel();
+
+        if (_capacity)
+            free(_buffer);
     }
 
-    bool NetworkInputStream::Next(const void ** data, int * size)
+    bool ZeroCopyNetworkInputStream::Next(const void ** data, int * size)
     {
+        _head = -1;
+        ::ResetEvent(_signal);
 
+        if (::WaitForSingleObject(_signal, INFINITE) == WAIT_FAILED)
+            return false;
+
+        *data = &_buffer[_head];
+        *size = _ptr - _head;
         return true;
     }
 
-    void NetworkInputStream::BackUp(int count)
+    void ZeroCopyNetworkInputStream::BackUp(int count)
     {
-        
+        // NetworkStream不支持BackUp方法
+        NotSupportedException e;
+        SET_EXCEPTION(e);
+        throw e;
     }
 
-    bool NetworkInputStream::ReadDelimitedFrom(google::protobuf::io::ZeroCopyInputStream * rawInput, google::protobuf::MessageLite & message)
+    bool ZeroCopyNetworkInputStream::Skip(int count)
+    {
+        // NetworkStream不支持Skip方法
+        NotSupportedException e;
+        SET_EXCEPTION(e);
+        throw e;
+    }
+
+    long long ZeroCopyNetworkInputStream::ByteCount() const
+    {
+        return 0;
+    }
+
+    DWORD_PTR ZeroCopyNetworkInputStream::ReceiveProc(DWORD_PTR Param, HANDLE hCancel)
+    {
+        HANDLE signals[] = { hCancel, _signal };
+        DWORD wait_result = 0;
+        while (wait_result = ::WaitForMultipleObjects(2, signals, false, 0))
+        {
+            if (wait_result == WAIT_OBJECT_0) // Task 取消
+                break;
+            else if (wait_result == WAIT_FAILED)
+                return -1;
+            else if (wait_result == WAIT_OBJECT_0 + 1) // ZeroCopyNetworkInputStream::_signal无信号的状态时才可以接收数据
+                continue;
+
+            if (_ptr == _capacity)
+                _ptr = _head = 0;
+
+            _head = _ptr;
+            _ptr += _tcp_stream.Read(_buffer, _ptr, _capacity - _ptr);
+            ::SetEvent(_signal);
+        }
+        return 0;
+    }
+
+    LengthDelimitedNetworkInputStream::LengthDelimitedNetworkInputStream(tcp_stream & netstream, LPBYTE pBuffer, int size) :
+        _byte_count(0), _stream(netstream), _direct_buffer(pBuffer), _buffer_size(size), _remain_size(0),
+        _recv_task(Task::BindFunction(&LengthDelimitedNetworkInputStream::ReceiveProc, this), NULL)
+    {
+        _signal = ::CreateEvent(nullptr, true, false, nullptr);
+        _recv_task.Start();
+    }
+
+    LengthDelimitedNetworkInputStream::~LengthDelimitedNetworkInputStream()
+    {
+        _recv_task.Cancel();
+        _DataPool::BufferPool().Push(_direct_buffer);
+        ::CloseHandle(_signal);
+    }
+
+    bool LengthDelimitedNetworkInputStream::Next(const void ** data, int * size)
+    {
+        ::ResetEvent(_signal);
+        if (::WaitForSingleObject(_signal, INFINITE) == WAIT_OBJECT_0)
+        {
+            *data = _direct_buffer;
+            *size = static_cast<int>(_current_size);
+            return true;
+        }
+        return false;
+    }
+
+    void LengthDelimitedNetworkInputStream::BackUp(int count)
+    {
+        // LengthDelimited的方式不需要用到BackUp操作
+    }
+
+    bool LengthDelimitedNetworkInputStream::Skip(int count)
+    {
+        ::ResetEvent(_signal);
+        return false;
+    }
+
+    long long LengthDelimitedNetworkInputStream::ByteCount() const
+    {
+        ::ResetEvent(_signal);
+        return 0;
+    }
+
+    bool LengthDelimitedNetworkInputStream::ReadDelimitedFrom(google::protobuf::io::ZeroCopyInputStream * rawInput, google::protobuf::MessageLite & message)
     {
         // We create a new coded stream for each message.  Don't worry, this is fast,
         // and it makes sure the 64MB total size limit is imposed per-message rather
@@ -227,15 +317,18 @@ namespace rpc
 
         // Read the size.
         uint32_t size;
-        if (!input.ReadVarint32(&size)) return false;
+        if (!input.ReadVarint32(&size))
+            return false;
 
         // Tell the stream not to read beyond that size.
         google::protobuf::io::CodedInputStream::Limit limit =
             input.PushLimit(size);
 
         // Parse the message.
-        if (!message.MergeFromCodedStream(&input)) return false;
-        if (!input.ConsumedEntireMessage()) return false;
+        if (!message.MergeFromCodedStream(&input))
+            return false;
+        if (!input.ConsumedEntireMessage())
+            return false;
 
         // Release the limit.
         input.PopLimit(limit);
@@ -243,12 +336,60 @@ namespace rpc
         return true;
     }
 
-    DWORD_PTR NetworkInputStream::ReceiveProc(DWORD_PTR Param, HANDLE hCancel)
+    DWORD_PTR LengthDelimitedNetworkInputStream::ReceiveProc(DWORD_PTR Param, HANDLE hCancel)
     {
-        //_stream.ReadAsync()
+        using namespace google::protobuf::io;
+
+        HANDLE signals[] = { hCancel, _signal };
+        DWORD wait_result = 0;
+        while (wait_result = ::WaitForMultipleObjects(2, signals, false, 0))
+        {
+            if (wait_result == WAIT_OBJECT_0) // Task 取消
+                break;
+            else if (wait_result == WAIT_FAILED)
+                return -1;
+            else if (wait_result == WAIT_OBJECT_0 + 1) // LengthDelimitedNetworkInputStream::_signal无信号的状态时才可以接收数据
+                continue;
+
+            _current_size = 0;
+            uint32_t data_size = 0;
+
+            if (_remain_size != 0)
+            {
+                while (::WaitForSingleObject(hCancel, 0) == WAIT_TIMEOUT && data_size != (std::min)(_buffer_size, _remain_size))
+                    data_size += _stream.Read(_direct_buffer, data_size, (std::min)(_buffer_size, _remain_size) - data_size);
+
+                _current_size = data_size;
+                _remain_size -= data_size;
+            }
+            else
+            {
+                while (::WaitForSingleObject(hCancel, 0) == WAIT_TIMEOUT && data_size != 4)
+                    data_size += _stream.Read(_direct_buffer, data_size, 1);
+
+                ArrayInputStream ais(_direct_buffer, _buffer_size);
+                CodedInputStream cis(&ais);
+                if (!cis.ReadVarint32(&_remain_size))
+                    continue;
+                
+                uint32_t length_size = CodedOutputStream::VarintSize32(_remain_size);
+                _remain_size += length_size;
+                while (::WaitForSingleObject(hCancel, 0) == WAIT_TIMEOUT && data_size != (std::min)(_buffer_size - data_size, _remain_size))
+                    data_size += _stream.Read(_direct_buffer, data_size, (std::min)(_buffer_size - data_size, _remain_size) - data_size);
+
+                _current_size = data_size;
+                if (_remain_size > _buffer_size)
+                    _remain_size -= data_size;
+                else
+                    _remain_size = 0;
+            }
+
+            ::SetEvent(_signal);
+        }
+        return 0;
     }
 
-    bool NetworkOutputStream::WriteDelimitedTo(const google::protobuf::MessageLite & message, google::protobuf::io::ZeroCopyOutputStream * rawOutput)
+    bool LengthDelimitedNetworkOutputStream::WriteDelimitedTo(const google::protobuf::MessageLite & message, google::protobuf::io::ZeroCopyOutputStream * rawOutput)
     {
         // We create a new coded stream for each message.  Don't worry, this is fast.
         google::protobuf::io::CodedOutputStream output(rawOutput);

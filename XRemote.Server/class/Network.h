@@ -191,23 +191,6 @@ namespace hxc
         virtual void OnShutdown() = 0;
     };
 
-    class SafeLayer : public SocketLayerBase
-    {
-    public:
-        SafeLayer();
-        ~SafeLayer();
-
-        void set__PublicKey_Remote(const std::vector<BYTE>& value);
-        std::vector<BYTE> get__PublicKet_Remote();
-
-        void set__Certificate(const X509Certificate& value);
-        X509Certificate get__Certificate();
-
-        virtual void OnSendData(std::vector<BYTE>& data);
-        virtual void OnReceiveData(std::vector<BYTE>& data);
-        virtual void OnShutdown() {}
-    };
-
     class tcp_stream
     {
     public:

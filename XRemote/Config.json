@@ -1,7 +1,7 @@
 ﻿{
     "General": {
-        "LibCefDirPath": "E:\\Documents\\Visual Studio 2017\\Projects\\XRemote\\libcef\\",
-        "LibCefResourcesDirPath": "E:\\Documents\\Visual Studio 2017\\Projects\\XRemote\\libcef\\Resources\\",
+        "LibCefDirPath": "E:\\Documents\\Visual Studio 2015\\Projects\\XRemote\\libcef\\",
+        "LibCefResourcesDirPath": "E:\\Documents\\Visual Studio 2015\\Projects\\XRemote\\libcef\\Resources\\",
         "Commit": "34ea99c4f50434a775b5a3551bff98dde71b9074"
     },
     "Network": {

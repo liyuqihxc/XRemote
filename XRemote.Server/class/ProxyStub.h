@@ -129,14 +129,40 @@ namespace rpc
         IDispatchImpl<T, piid, tihclass>::_tih =
     { piid, NULL, NULL, 0 };
 
-    class NetworkInputStream : public google::protobuf::io::ZeroCopyInputStream
+    class ZeroCopyNetworkInputStream
+    {
+    public:
+    	ZeroCopyNetworkInputStream(tcp_stream& tcp_stream, int capacity);
+    	~ZeroCopyNetworkInputStream();
+        ZeroCopyNetworkInputStream(const ZeroCopyNetworkInputStream& o) = delete;
+        ZeroCopyNetworkInputStream& operator=(const ZeroCopyNetworkInputStream& o) = delete;
+    public:
+        virtual bool Next(const void** data, int* size);
+        virtual void BackUp(int count);
+        virtual bool Skip(int count);
+        virtual long long ByteCount() const;
+    private:
+        DWORD_PTR ReceiveProc(DWORD_PTR Param, HANDLE hCancel);
+    private:
+        uint8_t* _buffer;
+        const int32_t _capacity;
+        volatile int32_t _head;
+        volatile int32_t _ptr;
+
+        HANDLE _signal;
+
+        tcp_stream _tcp_stream;
+        Task _recv_task;
+    };
+
+    class LengthDelimitedNetworkInputStream : public google::protobuf::io::ZeroCopyInputStream
     {
     private:
-        NetworkInputStream(const NetworkInputStream& o) = delete;
-        NetworkInputStream& operator=(const NetworkInputStream& o) = delete;
+        LengthDelimitedNetworkInputStream(const LengthDelimitedNetworkInputStream& o) = delete;
+        LengthDelimitedNetworkInputStream& operator=(const LengthDelimitedNetworkInputStream& o) = delete;
     public:
-        explicit NetworkInputStream(tcp_stream& netstream);
-        virtual ~NetworkInputStream();
+        explicit LengthDelimitedNetworkInputStream(tcp_stream& netstream, LPBYTE pBuffer, int size);
+        virtual ~LengthDelimitedNetworkInputStream();
     public:
         virtual bool Next(const void** data, int* size);
         virtual void BackUp(int count);
@@ -150,30 +176,27 @@ namespace rpc
     private:
         DWORD_PTR ReceiveProc(DWORD_PTR Param, HANDLE hCancel);
     private:
-        const int BufferSize = _DataPool::BufferSize;
         tcp_stream _stream;
-        io::QueueBuffer _internal_buffer;
         Task _recv_task;
 
-        int _head;
-        int _ptr;
-        int _end;
-        LPBYTE _direct_buffer;
+        HANDLE _signal;
 
-        int _backup_head;
-        int _backup_ptr;
-        int _backup_end;
-        LPBYTE _backup_direct_buffer;
+        uint64_t _byte_count;
+
+        uint32_t _buffer_size;
+        uint32_t _current_size;
+        uint32_t _remain_size;
+        LPBYTE _direct_buffer;
     };
 
-    class NetworkOutputStream : public google::protobuf::io::ZeroCopyOutputStream
+    class LengthDelimitedNetworkOutputStream : public google::protobuf::io::ZeroCopyOutputStream
     {
     private:
-        NetworkOutputStream(const NetworkOutputStream& o) {}
-        NetworkOutputStream& operator=(const NetworkOutputStream& o) {}
+        LengthDelimitedNetworkOutputStream(const LengthDelimitedNetworkOutputStream& o) {}
+        LengthDelimitedNetworkOutputStream& operator=(const LengthDelimitedNetworkOutputStream& o) {}
     public:
-        explicit NetworkOutputStream(tcp_stream& netstream);
-        virtual ~NetworkOutputStream();
+        explicit LengthDelimitedNetworkOutputStream(tcp_stream& netstream);
+        virtual ~LengthDelimitedNetworkOutputStream();
     public:
         virtual bool Next(void** data, int* size);
         virtual void BackUp(int count);
@@ -297,16 +320,16 @@ namespace rpc
 
             LPBYTE pBuffer = _DataPool::BufferPool().Pop();
             tcp_stream stream(_ControlSock.get__Client());
-            NetworkInputStream nis(stream);
+            LengthDelimitedNetworkInputStream nis(stream, pBuffer, _DataPool::BufferSize);
 
             while (::WaitForSingleObject(_EventStop, 0) == WAIT_TIMEOUT)
             {
                 try
                 {
                     RpcInvoke invoke;
-                    if (NetworkInputStream::ReadDelimitedFrom(&nis, invoke))
+                    if (LengthDelimitedNetworkInputStream::ReadDelimitedFrom(&nis, invoke))
                     {
-
+                        
                     }
                 }
                 catch (const Exception&)

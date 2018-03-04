@@ -3,6 +3,16 @@
 #ifndef _HXC_H_
 #define _HXC_H_
 
+#include <cstdint>
+using std::int8_t;
+using std::uint8_t;
+using std::int16_t;
+using std::uint16_t;
+using std::int32_t;
+using std::uint32_t;
+using std::int64_t;
+using std::uint64_t;
+
 #include <exception>
 #include <memory>
 #include <list>
@@ -100,14 +110,11 @@ namespace hxc
 
 #include "Exceptions.h"
 #include "Locks.h"
-#include "Event.h"
 #include "stdTrunk.hpp"
-#include "MemoryStream.h"
 #include "Environment.h"
 #include "Crypt.h"
 #include "Pool.h"
 #include "Tasks.h"
-#include "stream.h"
 #include "Network.h"
 #include "ProxyStub.h"
 #include "Service.h"
