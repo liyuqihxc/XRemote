@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Res.h"
-#include "NetworkManager.h"
+#include "ClassFactoryImpl.h"
 
 class MainApp : public hxc::ServiceBase
 {
@@ -15,4 +15,7 @@ public:
 
     virtual void OnStart();
     virtual void OnStop();
+
+private:
+    std::unique_ptr<hxc::rpc::CStub<ClassFactoryImpl>> _ClassFactoryStub;
 };

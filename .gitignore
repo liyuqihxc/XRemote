@@ -3,7 +3,7 @@ Test/
 # Library Redistribution
 libcef/
 libx264/
-XRemote.Messages/google/
+XRemote.Messages/protobuf/
 XRemote/resources/lib/*
 
 # Byte-compiled / optimized / DLL files

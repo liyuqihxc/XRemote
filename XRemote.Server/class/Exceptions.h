@@ -104,6 +104,12 @@ namespace hxc
         static std::wstring FormatErrorMessage(DWORD dwWin32Error);
     };
 
+    class ComException : public Exception
+    {
+    public:
+        explicit ComException(HRESULT hr);
+    };
+
 };//namespace hxc
 
 #endif//!defined _EXCEPTIONS

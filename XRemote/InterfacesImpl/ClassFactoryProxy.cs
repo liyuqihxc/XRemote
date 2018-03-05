@@ -24,14 +24,14 @@ namespace XRemote.InterfacesImpl
         }
 
         /// <summary>
-        /// 类工厂的InstanceID永远为0
+        /// 类工厂的ObjectID永远为0
         /// </summary>
         /// <param name="hc">HostContext</param>
         /// <returns></returns>
         public static new ClassFactoryProxy CreateInstance(HostContext hc)
         {
             var proxy = Proxy<ClassFactoryProxy>.CreateInstance(hc);
-            proxy.ProxyID = 0;
+            proxy.ObjectID = 0;
             return proxy;
         }
 

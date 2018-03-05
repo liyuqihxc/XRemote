@@ -81,9 +81,6 @@
     <ClInclude Include="RPC.pb.h">
       <Filter>生成的文件</Filter>
     </ClInclude>
-    <ClInclude Include="NetworkManager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="class\Tasks.h">
       <Filter>class</Filter>
     </ClInclude>
@@ -142,9 +139,6 @@
     </ClCompile>
     <ClCompile Include="class\Pool.cpp">
       <Filter>class</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkManager.cpp">
-      <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ClassFactoryImpl.cpp">
       <Filter>源文件</Filter>

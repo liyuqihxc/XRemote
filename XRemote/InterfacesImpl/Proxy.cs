@@ -27,7 +27,7 @@ namespace XRemote.InterfacesImpl
         /// </summary>
         private Hashtable m_CallMap = Hashtable.Synchronized(new Hashtable());
 
-        protected int ProxyID { get; set; }
+        protected int ObjectID { get; set; }
 
         protected HostContext m_HostContext { get; private set; }
 
@@ -43,7 +43,7 @@ namespace XRemote.InterfacesImpl
 
             T t =  new T();
             var proxy = t as Proxy<T>;
-            proxy.ProxyID = proxy.GetHashCode();
+            proxy.ObjectID = proxy.GetHashCode();
             proxy.m_HostContext = hc;
 
             return t;
@@ -122,7 +122,7 @@ namespace XRemote.InterfacesImpl
             var invoke = new RPC.RpcInvoke();
             invoke.InterfaceID = Crc32.Hash(typeof(I).GUID.ToByteArray(), 0, 16);
             invoke.CallID = invoke.GetHashCode();
-            invoke.ProxyID = ProxyID;
+            invoke.ObjectID = ObjectID;
             invoke.DispID = DispID;
             invoke.WFlags = (ushort)wFlags;
             foreach (var p in Params)

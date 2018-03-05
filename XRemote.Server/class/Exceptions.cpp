@@ -153,4 +153,8 @@ namespace hxc
         LocalFree(hmem);
         return msg;
     }
+
+    ComException::ComException(HRESULT hr) : Exception(hr)
+    {
+    }
 }

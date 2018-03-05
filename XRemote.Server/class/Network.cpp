@@ -63,7 +63,7 @@ namespace hxc
             if (get__ErrorCode() == ERROR_SUCCESS)
             {
                 DWORD cbTransfer = 0, dwFlags = 0;
-                ::WSAGetOverlappedResult(_Socket.get__Handle(), this, &cbTransfer, TRUE, &dwFlags);
+                ::WSAGetOverlappedResult(_Socket.get__Handle(), this, &cbTransfer, FALSE, &dwFlags);
 
                 std::shared_ptr<Socket>* s =  reinterpret_cast<std::shared_ptr<Socket>*>(get__InternalParams()[0]);
                 std::shared_ptr<Socket> socket(*s);
@@ -102,7 +102,7 @@ namespace hxc
             if (get__ErrorCode() != ERROR_SUCCESS)
             {
                 DWORD cbTransfer = 0, dwFlags = 0;
-                ::WSAGetOverlappedResult(_Socket.get__Handle(), this, &cbTransfer, TRUE, &dwFlags);
+                ::WSAGetOverlappedResult(_Socket.get__Handle(), this, &cbTransfer, FALSE, &dwFlags);
 
                 LPDWORD lpdwFlags = reinterpret_cast<LPDWORD>(get__InternalParams()[0]);
                 *lpdwFlags = dwFlags;

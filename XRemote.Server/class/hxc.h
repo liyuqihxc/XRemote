@@ -66,7 +66,7 @@ namespace hxc
         AsyncResultImpl();
     public:
         AsyncResultImpl(DWORD_PTR AsyncState, const ASYNCCALLBACK& callback);
-        ~AsyncResultImpl();
+        virtual ~AsyncResultImpl();
 
         virtual void Complete(DWORD ErrCode, bool CompletedSynchronously);
         virtual void WaitForCompletion(void);

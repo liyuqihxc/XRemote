@@ -4,10 +4,7 @@
 #define _BACKDOOR_PROXYSTUB_H_
 
 #include <mstcpip.h>
-//#include "Pool.h"
 #include "xRemoteServer_h.h"
-#include "RPC.pb.h"
-#include "google/protobuf/io/zero_copy_stream.h"
 
 namespace hxc
 {
@@ -129,96 +126,11 @@ namespace rpc
         IDispatchImpl<T, piid, tihclass>::_tih =
     { piid, NULL, NULL, 0 };
 
-    class ZeroCopyNetworkInputStream
-    {
-    public:
-    	ZeroCopyNetworkInputStream(tcp_stream& tcp_stream, int capacity);
-    	~ZeroCopyNetworkInputStream();
-        ZeroCopyNetworkInputStream(const ZeroCopyNetworkInputStream& o) = delete;
-        ZeroCopyNetworkInputStream& operator=(const ZeroCopyNetworkInputStream& o) = delete;
-    public:
-        virtual bool Next(const void** data, int* size);
-        virtual void BackUp(int count);
-        virtual bool Skip(int count);
-        virtual long long ByteCount() const;
-    private:
-        DWORD_PTR ReceiveProc(DWORD_PTR Param, HANDLE hCancel);
-    private:
-        uint8_t* _buffer;
-        const int32_t _capacity;
-        volatile int32_t _head;
-        volatile int32_t _ptr;
-
-        HANDLE _signal;
-
-        tcp_stream _tcp_stream;
-        Task _recv_task;
-    };
-
-    class LengthDelimitedNetworkInputStream : public google::protobuf::io::ZeroCopyInputStream
-    {
-    private:
-        LengthDelimitedNetworkInputStream(const LengthDelimitedNetworkInputStream& o) = delete;
-        LengthDelimitedNetworkInputStream& operator=(const LengthDelimitedNetworkInputStream& o) = delete;
-    public:
-        explicit LengthDelimitedNetworkInputStream(tcp_stream& netstream, LPBYTE pBuffer, int size);
-        virtual ~LengthDelimitedNetworkInputStream();
-    public:
-        virtual bool Next(const void** data, int* size);
-        virtual void BackUp(int count);
-        virtual bool Skip(int count);
-        virtual long long ByteCount() const;
-    public:
-        static bool ReadDelimitedFrom(
-            google::protobuf::io::ZeroCopyInputStream* rawInput,
-            google::protobuf::MessageLite& message
-        );
-    private:
-        DWORD_PTR ReceiveProc(DWORD_PTR Param, HANDLE hCancel);
-    private:
-        tcp_stream _stream;
-        Task _recv_task;
-
-        HANDLE _signal;
-
-        uint64_t _byte_count;
-
-        uint32_t _buffer_size;
-        uint32_t _current_size;
-        uint32_t _remain_size;
-        LPBYTE _direct_buffer;
-    };
-
-    class LengthDelimitedNetworkOutputStream : public google::protobuf::io::ZeroCopyOutputStream
-    {
-    private:
-        LengthDelimitedNetworkOutputStream(const LengthDelimitedNetworkOutputStream& o) {}
-        LengthDelimitedNetworkOutputStream& operator=(const LengthDelimitedNetworkOutputStream& o) {}
-    public:
-        explicit LengthDelimitedNetworkOutputStream(tcp_stream& netstream);
-        virtual ~LengthDelimitedNetworkOutputStream();
-    public:
-        virtual bool Next(void** data, int* size);
-        virtual void BackUp(int count);
-        virtual long long ByteCount() const;
-        virtual bool WriteAliasedRaw(const void* data, int size);
-        virtual bool AllowsAliasing() const;
-    public:
-        static bool WriteDelimitedTo(
-            const google::protobuf::MessageLite& message,
-            google::protobuf::io::ZeroCopyOutputStream* rawOutput
-        );
-    };
-
     template<class T>
     class CStub :
         public T
     {
-        CStub() = delete;
-        explicit CStub(TcpClient& socket) : _ControlSock(socket), _RefCount(0), _EventStop(hxc::_DataPool::ManualResetEventPool().Pop()),
-            _ReceiveTask(Task::BindFunction(&CStub::OnReceive, this), NULL, WT_EXECUTEINLONGTHREAD)
-        {
-        }
+        explicit CStub() : _RefCount(0) {}
     public:
         ~CStub()
         {
@@ -240,11 +152,6 @@ namespace rpc
 
         void FinalRelease()
         {
-            //if (_ControlSock != nullptr)
-                //delete _ControlSock;
-            ::SetEvent(_EventStop);
-            hxc::_DataPool::ManualResetEventPool().Push(_EventStop);
-
             __if_exists(T::FinalRelease)
             {
                 T::FinalRelease();
@@ -252,7 +159,6 @@ namespace rpc
         }
 
         static HRESULT WINAPI CreateInstance(
-            _In_ TcpClient& tcpClient,
             _COM_Outptr_ void** ppv
         )
         {
@@ -260,7 +166,7 @@ namespace rpc
                 return E_POINTER;
             *ppv = NULL;
 
-            CStub* pret = new CStub(tcpClient);
+            CStub* pret = new CStub();
 
             HRESULT hres = pret->CStub::FinalConstruct();
             if (FAILED(hres))
@@ -268,7 +174,6 @@ namespace rpc
                 pret->Release();
                 return hres;
             }
-            pret->_ReceiveTask.Start();
             *ppv = pret;
 
             pret->AddRef();//因为引用计数初始值为0
@@ -313,47 +218,7 @@ namespace rpc
             return 0;
         }
     protected:
-        DWORD_PTR OnReceive(DWORD_PTR Param, HANDLE hCancel)
-        {
-            using namespace std;
-            using namespace RPC;
-
-            LPBYTE pBuffer = _DataPool::BufferPool().Pop();
-            tcp_stream stream(_ControlSock.get__Client());
-            LengthDelimitedNetworkInputStream nis(stream, pBuffer, _DataPool::BufferSize);
-
-            while (::WaitForSingleObject(_EventStop, 0) == WAIT_TIMEOUT)
-            {
-                try
-                {
-                    RpcInvoke invoke;
-                    if (LengthDelimitedNetworkInputStream::ReadDelimitedFrom(&nis, invoke))
-                    {
-                        
-                    }
-                }
-                catch (const Exception&)
-                {
-                    break;
-                }
-            }
-
-            _DataPool::BufferPool().Push(pBuffer);
-
-            return 0;
-        }
-
-        void ProcessData(void)
-        {
-        }
-
-    protected:
-        std::wstring _RemoteIP;
-        USHORT _RemotePort;
         volatile long _RefCount;
-        TcpClient& _ControlSock;
-        Task _ReceiveTask;
-        HANDLE _EventStop;
     };
 
     typedef struct _Object_Entry

@@ -187,7 +187,7 @@ namespace XRemote.Network
                 throw new ArgumentNullException();
 
             HostContext hc = new HostContext(conn);
-            hc.ClassFactory = InterfacesImpl.ClassFactoryProxy.CreateInstance(hc); ;
+            hc.ClassFactory = InterfacesImpl.ClassFactoryProxy.CreateInstance(hc);
 
             Guid iidISystemInfo = typeof(ISystemInfo).GUID;
             object Interface = null;

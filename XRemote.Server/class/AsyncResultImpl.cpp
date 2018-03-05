@@ -3,7 +3,7 @@
 
 hxc::AsyncResultImpl::AsyncResultImpl(DWORD_PTR AsyncState, const ASYNCCALLBACK & callback) :
     _AsyncState(AsyncState), _CompletedSynchronously(false), _IsCompleted(false),
-    _Callback(callback), _ErrorCode(0), _AsyncWaitHandle(NULL)
+    _Callback(callback), _ErrorCode(0), _AsyncWaitHandle(NULL), _EndCalled(false)
     {
         Internal = 0;
         InternalHigh = 0;
@@ -17,7 +17,7 @@ hxc::AsyncResultImpl::AsyncResultImpl(DWORD_PTR AsyncState, const ASYNCCALLBACK 
 hxc::AsyncResultImpl::~AsyncResultImpl()
 {
     _DataPool::ManualResetEventPool().Push(hEvent);
-    if (!_AsyncWaitHandle)
+    if (_AsyncWaitHandle)
         _DataPool::ManualResetEventPool().Push(_AsyncWaitHandle);
 
     ::DeleteCriticalSection(&_Lock);
@@ -89,7 +89,7 @@ DWORD_PTR hxc::AsyncResultImpl::get__AsyncState()
 HANDLE hxc::AsyncResultImpl::get__AsyncWaitHandle()
 {
     ::EnterCriticalSection(&_Lock);
-    if (_AsyncWaitHandle == NULL)
+    if (!_AsyncWaitHandle)
         _AsyncWaitHandle = _DataPool::ManualResetEventPool().Pop();
     ::LeaveCriticalSection(&_Lock);
     return _AsyncWaitHandle;

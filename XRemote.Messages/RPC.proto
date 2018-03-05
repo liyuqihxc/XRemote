@@ -35,7 +35,7 @@ message VariantParam
 
 message RpcInvoke
 {
-    sfixed32 ProxyID=1;
+    sfixed32 ObjectID=1;
     fixed32 InterfaceID=2;
     sfixed32 CallID=3;
     int32 DispID=4;

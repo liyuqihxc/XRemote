@@ -171,20 +171,31 @@ hxc::Task::_TaskContext::~_TaskContext()
 {
     _ASSERT(m_Ref == 0);
 
-    if (m_hEventWait != NULL)
+    if (m_hEventWait)
         _DataPool::ManualResetEventPool().Push(m_hEventWait);
+    if (m_hEventCancel)
+        _DataPool::ManualResetEventPool().Push(m_hEventCancel);
 }
 
 void hxc::Task::_TaskContext::Start()
 {
-    if (m_Status != TaskStatus::Created)
-        throw InvalidOperationException();
-
     ::EnterCriticalSection(&m_Lock);
-    m_Status = TaskStatus::WaitingToRun;
-    if (!::QueueUserWorkItem(ThreadPoolCallback, this, m_CreationFlags))
-        throw Win32Exception(::GetLastError());
-    ::LeaveCriticalSection(&m_Lock);
+    if (m_Status == TaskStatus::Canceled || m_Status == TaskStatus::Faulted)
+    {
+        throw InvalidOperationException();
+    }
+    else if (m_Status == TaskStatus::Running || m_Status == TaskStatus::RanToCompletion)
+    {
+        ::LeaveCriticalSection(&m_Lock);
+        return;
+    }
+    else if (m_Status == TaskStatus::Created)
+    {
+        m_Status = TaskStatus::WaitingToRun;
+        if (!::QueueUserWorkItem(ThreadPoolCallback, this, m_CreationFlags))
+            throw Win32Exception(::GetLastError());
+        ::LeaveCriticalSection(&m_Lock);
+    }
 }
 
 void hxc::Task::_TaskContext::Wait(DWORD millisecondsTimeout)
@@ -257,12 +268,10 @@ DWORD_PTR hxc::Task::_TaskContext::get__Result()
     {
         ::LeaveCriticalSection(&m_Lock);
         Wait(INFINITE);
-        return m_Result;
     }
     else if (m_Status == RanToCompletion)
     {
         ::LeaveCriticalSection(&m_Lock);
-        return m_Result;
     }
     else if (m_Status == TaskStatus::Canceled)
     {
@@ -274,6 +283,7 @@ DWORD_PTR hxc::Task::_TaskContext::get__Result()
         ::LeaveCriticalSection(&m_Lock);
         std::rethrow_exception(m_Exception);
     }
+    return m_Result;
 }
 
 std::vector<DWORD_PTR>& hxc::Task::_TaskContext::get_InternalParams()
