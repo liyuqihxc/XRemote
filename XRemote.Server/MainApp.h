@@ -17,5 +17,5 @@ public:
     virtual void OnStop();
 
 private:
-    std::unique_ptr<hxc::rpc::CStub<ClassFactoryImpl>> _ClassFactoryStub;
+    std::unique_ptr<hxc::ObjectCreator<ClassFactoryImpl>> _ClassFactoryStub;
 };

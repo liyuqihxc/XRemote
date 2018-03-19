@@ -69,6 +69,19 @@ namespace XRemote.PInvoke
         DISPATCH_PROPERTYPUTREF = 0x8,
     }
 
+    [Flags]
+    public enum SWP_FLAGS : uint
+    {
+        SWP_NOSIZE = 0x0001,
+        SWP_NOMOVE = 0x0002,
+        SWP_NOZORDER = 0x0004,
+        SWP_SHOWWINDOW = 0x0040,
+        SWP_HIDEWINDOW = 0x0080,
+        SWP_NOCOPYBITS = 0x0100,
+        SWP_ASYNCWINDOWPOS = 0x4000
+
+    }
+
     public enum HRESULT
     {
         S_OK,
@@ -150,5 +163,12 @@ namespace XRemote.PInvoke
 
         [DllImport("msvcrt.dll")]
         public static extern int memcmp(byte[] b1, byte[] b2, int count);
+
+        [DllImport("user32", SetLastError = true)]
+        public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, SWP_FLAGS uFlags);
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Chromium;
+using Chromium.Remote;
+using Chromium.Remote.Event;
 using Chromium.WebBrowser;
 using Newtonsoft.Json;
 using System;
@@ -40,50 +42,41 @@ namespace XRemote
 
             //CfxRuntime.EnableHighDpiSupport();
 
-            int exitCode = CfxRuntime.ExecuteProcess(null);
-            if (exitCode >= 0)
-                Environment.Exit(exitCode);
+            ChromiumWebBrowser.OnBeforeCfxInitialize += (e) =>
+            {
+                e.Settings.CachePath = Path.Combine(Config.General["LibCefDirPath"], "cache");
+                e.Settings.ResourcesDirPath = Config.General["LibCefResourcesDirPath"];
+                e.Settings.LocalesDirPath = Path.Combine(e.Settings.ResourcesDirPath, "locales");
+            };
+            ChromiumWebBrowser.OnBeforeCommandLineProcessing += (e) =>
+            {
+                e.CommandLine.AppendSwitch("disable-web-security");
+
+                //e.CommandLine.AppendSwitchWithValue("ppapi-flash-path", Path.Combine(Config.General["LibCefDirPath"], "PepperFlash\\x64\\pepflashplayer.dll"));
+                //e.CommandLine.AppendSwitchWithValue("ppapi-flash-version", "28.0.0.161");
+                e.CommandLine.AppendSwitchWithValue("enable-system-flash", "1");
+
+                e.CommandLine.AppendSwitchWithValue("no-proxy-server", "1");
+
+                // for OSR.no WebGL support but gain increased FPS and reduced CPU usage).
+                // http://magpcss.org/ceforum/viewtopic.php?f=6&t=13271#p27075
+                //e.CommandLine.AppendSwitchWithValue("disable-gpu", "1");
+                //e.CommandLine.AppendSwitchWithValue("disable-gpu-compositing", "1");
+                //e.CommandLine.AppendSwitchWithValue("disable-gpu-vsync", "1");
+            };
+
+            ChromiumWebBrowser.Initialize();
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
-            var settings = new CfxSettings();
-            settings.WindowlessRenderingEnabled = true;
-            settings.NoSandbox = true;
-
-            //settings.SingleProcess = true;
-
-            //settings.LogSeverity = CfxLogSeverity.Disable;
-#if DEBUG
-            settings.ResourcesDirPath = Config.General["LibCefDirPath"];
-#else
-            settings.ResourcesDirPath = assemblyDir
-#endif
-            settings.LocalesDirPath = Path.Combine(settings.ResourcesDirPath, "locales");
-
-            var app = new CfxApp();
-            app.OnBeforeCommandLineProcessing += (s, e) =>
-            {
-                e.CommandLine.AppendSwitch("disable-web-security");
-                e.CommandLine.AppendSwitch("enable-system-flash");
-
-                // optimizations following recommendations from issue #84
-                //e.CommandLine.AppendSwitch("disable-gpu");
-                //e.CommandLine.AppendSwitch("disable-gpu-compositing");
-                //e.CommandLine.AppendSwitch("disable-gpu-vsync");
-            };
-
-            if (!CfxRuntime.Initialize(settings, app))
-                Environment.Exit(-1);
 
             Common.GlobalObjectPool.InitializePool();
 
             // 监听连接请求
             ProxyListener.Initialize();
 
-            var f = new MainForm();
+            var f = new MainFrame();
             f.Show();
-            Application.Idle += (s, e) => CfxRuntime.DoMessageLoopWork();
             Application.Run(f);
 
             Common.GlobalObjectPool.DestroyPool();

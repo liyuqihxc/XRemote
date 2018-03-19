@@ -1,9 +1,8 @@
 #include "stdafx.h"
 #include "hxc.h"
-#include "RPC.pb.h"
 #include "ClassFactoryImpl.h"
 
-ZeroCopyNetworkInputStream::ZeroCopyNetworkInputStream(hxc::tcp_stream & tcp_stream, int capacity) :
+ZeroCopyNetworkInputStream::ZeroCopyNetworkInputStream(hxc::tcp_stream & tcp_stream, int32_t capacity) :
     _buffer((uint8_t*)malloc(capacity)), _capacity(capacity), _tcp_stream(tcp_stream), _signal(CreateEvent(nullptr, true, false, nullptr)),
     _head(0), _ptr(0), _recv_task(hxc::Task::BindFunction(&ZeroCopyNetworkInputStream::ReceiveProc, this), NULL)
 {
@@ -108,6 +107,52 @@ bool ZeroCopyNetworkInputStream::ReadDelimitedFrom(google::protobuf::io::ZeroCop
     return true;
 }
 
+ZeroCopyNetworkOutputStream::ZeroCopyNetworkOutputStream(hxc::tcp_stream & tcp_stream, int32_t capacity):
+    _buffer((uint8_t*)malloc(capacity)), _capacity(capacity), _tcp_stream(tcp_stream), _ptr(0), _allow_backup(false)
+{
+}
+
+ZeroCopyNetworkOutputStream::~ZeroCopyNetworkOutputStream()
+{
+    if (_capacity)
+        free(_buffer);
+}
+
+bool ZeroCopyNetworkOutputStream::Next(void ** data, int * size)
+{
+    if (_ptr != 0)
+    {
+        _tcp_stream.Write(reinterpret_cast<LPBYTE>(_buffer), 0, _ptr);
+        _ptr = 0;
+    }
+    *data = _buffer;
+    *size = _capacity;
+    _ptr = _capacity;
+    _allow_backup = true;
+    return true;
+}
+
+void ZeroCopyNetworkOutputStream::BackUp(int count)
+{
+    if (!_allow_backup)
+        return;
+    _ptr = (std::min)(0, _ptr - count);
+    _allow_backup = _ptr == 0;
+}
+
+long long ZeroCopyNetworkOutputStream::ByteCount() const
+{
+    // NetworkStream不支持ByteCount方法
+    hxc::NotSupportedException e;
+    SET_EXCEPTION(e);
+    throw e;
+}
+
+bool ZeroCopyNetworkOutputStream::WriteAliasedRaw(const void * data, int size)
+{
+    return _tcp_stream.Write((const LPBYTE)data, 0, size) == size;
+}
+
 bool ZeroCopyNetworkOutputStream::WriteDelimitedTo(const google::protobuf::MessageLite & message, google::protobuf::io::ZeroCopyOutputStream * rawOutput)
 {
     // We create a new coded stream for each message.  Don't worry, this is fast.
@@ -204,6 +249,21 @@ DWORD_PTR ClassFactoryImpl::MaintainConnection(DWORD_PTR Param, HANDLE hCancel)
     return 0;
 }
 
+void ClassFactoryImpl::RemoteActivation(const RPC::RpcInvoke& invoke, ZeroCopyNetworkOutputStream& nos)
+{
+    RPC::VariantParam guid = invoke.params(0);
+    RPC::VariantParam objectid = invoke.params(1);
+    IID id = {};
+    memcpy(&id, guid.guid().c_str(), sizeof(IID));
+
+    IUnknown* p = nullptr;
+    HRESULT hr = CreateInstance(id, &p);
+    if (SUCCEEDED(hr))
+    {
+        RPC::RpcReturn ret;
+    }
+}
+
 DWORD_PTR ClassFactoryImpl::OnReceive(DWORD_PTR Param, HANDLE hCancel)
 {
     using namespace std;
@@ -211,7 +271,8 @@ DWORD_PTR ClassFactoryImpl::OnReceive(DWORD_PTR Param, HANDLE hCancel)
     using namespace hxc;
 
     tcp_stream stream(_Connection.get__Client());
-    ZeroCopyNetworkInputStream nis(stream, 512);
+    ZeroCopyNetworkInputStream nis(stream, 256);
+    ZeroCopyNetworkOutputStream nos(stream, 256);
 
     auto wait = ::WaitForSingleObject(hCancel, 0);
 
@@ -227,14 +288,7 @@ DWORD_PTR ClassFactoryImpl::OnReceive(DWORD_PTR Param, HANDLE hCancel)
                     switch (invoke.dispid())
                     {
                     case 1:
-                        {
-                            RPC::VariantParam guid = invoke.params(0);
-                            RPC::VariantParam objectid = invoke.params(1);
-                            IID id = {};
-                            memcpy(&id, guid.guid().c_str(), sizeof(IID));
-                            IUnknown* p = nullptr;
-                            CreateInstance(id, &p);
-                        }
+                        RemoteActivation(invoke, nos);
                         break;
                     default:
                         break;

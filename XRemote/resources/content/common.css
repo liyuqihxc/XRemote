@@ -50,3 +50,43 @@ body
 {
     padding:0 !important;
 }
+
+.icon-network {
+    background: url('../lib/easyui.bootstrap-1.5/icons/network.svg') no-repeat center center;
+}
+
+.icon-host {
+    background: url('../lib/easyui.bootstrap-1.5/icons/host.svg') no-repeat center center;
+}
+
+.icon-folder {
+    background: url('../lib/easyui.bootstrap-1.5/icons/folder.svg') no-repeat center center;
+}
+
+.icon-display {
+    background: url('../lib/easyui.bootstrap-1.5/icons/display.svg') no-repeat center center;
+}
+
+.icon-camera {
+    background: url('../lib/easyui.bootstrap-1.5/icons/camera.svg') no-repeat center center;
+}
+
+.icon-console {
+    background: url('../lib/easyui.bootstrap-1.5/icons/console.svg') no-repeat center center;
+}
+
+.icon-gear {
+    background: url('../lib/easyui.bootstrap-1.5/icons/gear.svg') no-repeat center center;
+}
+
+.icon-shutdown {
+    background: url('../lib/easyui.bootstrap-1.5/icons/shutdown.svg') no-repeat center center;
+}
+
+.icon-reboot {
+    background: url('../lib/easyui.bootstrap-1.5/icons/reboot.svg') no-repeat center center;
+}
+
+.icon-exit {
+    background: url('../lib/easyui.bootstrap-1.5/icons/exit.svg') no-repeat center center;
+}

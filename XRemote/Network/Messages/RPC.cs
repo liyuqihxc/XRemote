@@ -34,19 +34,19 @@ namespace RPC {
             "IoUBCglScGNJbnZva2USEAoIT2JqZWN0SUQYASABKA8SEwoLSW50ZXJmYWNl",
             "SUQYAiABKAcSDgoGQ2FsbElEGAMgASgPEg4KBkRpc3BJRBgEIAEoBRIOCgZ3",
             "RmxhZ3MYBSABKAUSIQoGUGFyYW1zGAYgAygLMhEuUlBDLlZhcmlhbnRQYXJh",
-            "bSLHAQoJUnBjUmV0dXJuEg4KBkNhbGxJRBgBIAEoDxIPCgdIUmVzdWx0GAIg",
-            "ASgPEiQKCVJldHVyblZhbBgDIAEoCzIRLlJQQy5WYXJpYW50UGFyYW0SLwoJ",
-            "RXhjZXB0aW9uGAQgASgLMhwuUlBDLlJwY1JldHVybi5FeGNlcHRpb25JbmZv",
-            "GkIKDUV4Y2VwdGlvbkluZm8SEwoLRGVzY3JpcHRpb24YASABKAkSDQoFc2Nv",
-            "ZGUYAiABKAUSDQoFd0NvZGUYAyABKAUyFAoSUmVtb3RlQ2xhc3NGYWN0b3J5",
-            "QgJIAmIGcHJvdG8z"));
+            "bSLMAQoJUnBjUmV0dXJuEg4KBkNhbGxJRBgBIAEoDxIPCgdIUmVzdWx0GAIg",
+            "ASgPEikKDlJlZl9PdXRfUGFyYW1zGAMgAygLMhEuUlBDLlZhcmlhbnRQYXJh",
+            "bRIvCglFeGNlcHRpb24YBCABKAsyHC5SUEMuUnBjUmV0dXJuLkV4Y2VwdGlv",
+            "bkluZm8aQgoNRXhjZXB0aW9uSW5mbxITCgtEZXNjcmlwdGlvbhgBIAEoCRIN",
+            "CgVzY29kZRgCIAEoBRINCgV3Q29kZRgDIAEoBTIUChJSZW1vdGVDbGFzc0Zh",
+            "Y3RvcnlCAkgCYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::RPC.CreateInstanceParam), global::RPC.CreateInstanceParam.Parser, new[]{ "Version", "ActivityID", "Guid" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::RPC.VariantParam), global::RPC.VariantParam.Parser, new[]{ "Fixed32", "SFixed32", "Fixed64", "SFixed64", "Bool", "Float", "Double", "String", "Decimal", "Bytes", "Guid" }, new[]{ "Value" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::RPC.RpcInvoke), global::RPC.RpcInvoke.Parser, new[]{ "ObjectID", "InterfaceID", "CallID", "DispID", "WFlags", "Params" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::RPC.RpcReturn), global::RPC.RpcReturn.Parser, new[]{ "CallID", "HResult", "ReturnVal", "Exception" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::RPC.RpcReturn.Types.ExceptionInfo), global::RPC.RpcReturn.Types.ExceptionInfo.Parser, new[]{ "Description", "Scode", "WCode" }, null, null, null)})
+            new pbr::GeneratedClrTypeInfo(typeof(global::RPC.RpcReturn), global::RPC.RpcReturn.Parser, new[]{ "CallID", "HResult", "RefOutParams", "Exception" }, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::RPC.RpcReturn.Types.ExceptionInfo), global::RPC.RpcReturn.Types.ExceptionInfo.Parser, new[]{ "Description", "Scode", "WCode" }, null, null, null)})
           }));
     }
     #endregion
@@ -993,7 +993,7 @@ namespace RPC {
     public RpcReturn(RpcReturn other) : this() {
       callID_ = other.callID_;
       hResult_ = other.hResult_;
-      ReturnVal = other.returnVal_ != null ? other.ReturnVal.Clone() : null;
+      refOutParams_ = other.refOutParams_.Clone();
       Exception = other.exception_ != null ? other.Exception.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -1025,15 +1025,14 @@ namespace RPC {
       }
     }
 
-    /// <summary>Field number for the "ReturnVal" field.</summary>
-    public const int ReturnValFieldNumber = 3;
-    private global::RPC.VariantParam returnVal_;
+    /// <summary>Field number for the "Ref_Out_Params" field.</summary>
+    public const int RefOutParamsFieldNumber = 3;
+    private static readonly pb::FieldCodec<global::RPC.VariantParam> _repeated_refOutParams_codec
+        = pb::FieldCodec.ForMessage(26, global::RPC.VariantParam.Parser);
+    private readonly pbc::RepeatedField<global::RPC.VariantParam> refOutParams_ = new pbc::RepeatedField<global::RPC.VariantParam>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::RPC.VariantParam ReturnVal {
-      get { return returnVal_; }
-      set {
-        returnVal_ = value;
-      }
+    public pbc::RepeatedField<global::RPC.VariantParam> RefOutParams {
+      get { return refOutParams_; }
     }
 
     /// <summary>Field number for the "Exception" field.</summary>
@@ -1062,7 +1061,7 @@ namespace RPC {
       }
       if (CallID != other.CallID) return false;
       if (HResult != other.HResult) return false;
-      if (!object.Equals(ReturnVal, other.ReturnVal)) return false;
+      if(!refOutParams_.Equals(other.refOutParams_)) return false;
       if (!object.Equals(Exception, other.Exception)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1072,7 +1071,7 @@ namespace RPC {
       int hash = 1;
       if (CallID != 0) hash ^= CallID.GetHashCode();
       if (HResult != 0) hash ^= HResult.GetHashCode();
-      if (returnVal_ != null) hash ^= ReturnVal.GetHashCode();
+      hash ^= refOutParams_.GetHashCode();
       if (exception_ != null) hash ^= Exception.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1095,10 +1094,7 @@ namespace RPC {
         output.WriteRawTag(21);
         output.WriteSFixed32(HResult);
       }
-      if (returnVal_ != null) {
-        output.WriteRawTag(26);
-        output.WriteMessage(ReturnVal);
-      }
+      refOutParams_.WriteTo(output, _repeated_refOutParams_codec);
       if (exception_ != null) {
         output.WriteRawTag(34);
         output.WriteMessage(Exception);
@@ -1117,9 +1113,7 @@ namespace RPC {
       if (HResult != 0) {
         size += 1 + 4;
       }
-      if (returnVal_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ReturnVal);
-      }
+      size += refOutParams_.CalculateSize(_repeated_refOutParams_codec);
       if (exception_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Exception);
       }
@@ -1140,12 +1134,7 @@ namespace RPC {
       if (other.HResult != 0) {
         HResult = other.HResult;
       }
-      if (other.returnVal_ != null) {
-        if (returnVal_ == null) {
-          returnVal_ = new global::RPC.VariantParam();
-        }
-        ReturnVal.MergeFrom(other.ReturnVal);
-      }
+      refOutParams_.Add(other.refOutParams_);
       if (other.exception_ != null) {
         if (exception_ == null) {
           exception_ = new global::RPC.RpcReturn.Types.ExceptionInfo();
@@ -1172,10 +1161,7 @@ namespace RPC {
             break;
           }
           case 26: {
-            if (returnVal_ == null) {
-              returnVal_ = new global::RPC.VariantParam();
-            }
-            input.ReadMessage(returnVal_);
+            refOutParams_.AddEntriesFrom(input, _repeated_refOutParams_codec);
             break;
           }
           case 34: {

@@ -3,12 +3,9 @@
 #ifndef _BACKDOOR_PROXYSTUB_H_
 #define _BACKDOOR_PROXYSTUB_H_
 
-#include <mstcpip.h>
 #include "xRemoteServer_h.h"
 
 namespace hxc
-{
-namespace rpc
 {
     class _TypeInfoHolder
     {
@@ -127,18 +124,15 @@ namespace rpc
     { piid, NULL, NULL, 0 };
 
     template<class T>
-    class CStub :
+    class ObjectCreator :
         public T
     {
-        explicit CStub() : _RefCount(0) {}
+        explicit ObjectCreator() : _RefCount(0) {}
     public:
-        ~CStub()
-        {
-            CStub::FinalRelease();
-        }
+        ~ObjectCreator() {}
 
-        CStub(const CStub&) = delete;
-        CStub& operator=(const CStub&) = delete;
+        ObjectCreator(const ObjectCreator&) = delete;
+        ObjectCreator& operator=(const ObjectCreator&) = delete;
 
         HRESULT FinalConstruct()
         {
@@ -166,9 +160,9 @@ namespace rpc
                 return E_POINTER;
             *ppv = NULL;
 
-            CStub* pret = new CStub();
+            ObjectCreator* pret = new ObjectCreator();
 
-            HRESULT hres = pret->CStub::FinalConstruct();
+            HRESULT hres = pret->ObjectCreator::FinalConstruct();
             if (FAILED(hres))
             {
                 pret->Release();
@@ -213,6 +207,7 @@ namespace rpc
         {
             if (_InterlockedDecrement(&_RefCount) <= 0)
             {
+                ObjectCreator::FinalRelease();
                 delete this;
             }
             return 0;
@@ -233,7 +228,16 @@ namespace rpc
         const GUID& ObjGUID;
     } OBJECT_ENTRY, *POBJECT_ENTRY;
 
-};//namespace rpc
+    class RpcStub
+    {
+    public:
+        RpcStub(const RpcStub&) = delete;
+        RpcStub& operator=(const RpcStub&) = delete;
+        explicit RpcStub(int32_t objectid);
+    private:
+        std::map<uint32_t, IDispatch*> _InterfaceMap;
+    };
+
 };//namespace hxc
 
 #endif//if !defined _BACKDOOR_PROXYSTUB_H_

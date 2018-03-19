@@ -3,6 +3,120 @@ import "oaidl.idl";
 import "ocidl.idl";
 
 [
+    object,
+    uuid(83A9F23F-1DF3-4C5F-A54E-698C35A7A908),
+    version(1.0),
+    helpstring("IRemoteClassFactory")
+]
+interface IRemoteClassFactory : IUnknown
+{
+    [id(1)] HRESULT CreateInstance(
+        [in] REFIID riid,
+        [out] IUnknown **ppObject
+    );
+
+    [id(2)] HRESULT LockServer(BOOL fLock);
+};
+
+/************************************************************************/
+interface IFolder;
+interface IFile;
+interface IDrive;
+
+[
+    object,
+    uuid(5FA6533F-A1A9-4666-911B-319071A71085),
+    version(1.0),
+    helpstring("IFileSystemFolder"),
+    dual,
+    oleautomation,
+    pointer_default(unique)
+]
+interface IFileSystem : IDispatch
+{
+    [id(1)] HRESULT GetFolder([in, string]LPCOLESTR Path, [out] IFolder** pp);
+    [id(2)] HRESULT GetFile([in, string]LPCOLESTR Path, [out] IFile** pp);
+    [id(3)] HRESULT GetDrive([in, string]LPCOLESTR Path, [out] IDrive** pp);
+};
+
+typedef struct _FileSystemItem
+{
+    USHORT cb;
+    int Attribute;
+    FILETIME LastWriteTime;
+    long long FileSize;
+    OLECHAR Name[1];
+}FILESYSTEMITEM, *LPFILESYSTEMITEM;
+
+[
+    object,
+    uuid(20DC6A23-729E-468C-A5BA-1D4E6F82D8E2),
+    version(1.0),
+    helpstring("IEnumFileSystemItem"),
+    dual,
+    oleautomation,
+    pointer_default(unique)
+]
+interface IEnumFileSystemItem : IDispatch
+{
+    [id(1)] HRESULT Next([in] UINT celt, [out, size_is(celt), length_is(*pceltFetched)] LPFILESYSTEMITEM *rgelt, [out] UINT *pceltFetched);
+    [id(2)] HRESULT Reset();
+    [id(3)] HRESULT Skip([in] UINT count);
+};
+
+[
+    object,
+    uuid(874F7863-262F-40AE-8AD3-D054EB82535D),
+    version(1.0),
+    helpstring("IFile"),
+    dual,
+    oleautomation
+]
+interface IFile : IDispatch
+{
+
+};
+
+[
+    object,
+    uuid(A097FA75-2096-4B77-9EDD-43D3F0D0C9E4),
+    version(1.0),
+    helpstring("IFolder"),
+    dual,
+    oleautomation
+]
+interface IFolder : IDispatch
+{
+
+};
+
+[
+    object,
+    uuid(90E0EAE0-09DA-4CBA-91D4-86EB02DE979E),
+    version(1.0),
+    helpstring("IDriver"),
+    dual,
+    oleautomation
+]
+interface IDrive : IDispatch
+{
+
+};
+
+[
+    object,
+    uuid(5F526937-8A2E-4BB1-923D-DD78E668B4FF),
+    version(1.0),
+    helpstring("ISystemInfo"),
+    dual,
+    oleautomation
+]
+interface ISystemInfo : IDispatch
+{
+
+};
+
+[
     uuid(F013C171-EDD1-48E8-83F2-D5C0DD621E46),
     version(1.0)
 ]
@@ -10,23 +124,6 @@ library xRemoteServerLib
 {
     importlib("stdole2.tlb");
     // tlbimp xRemoteServer.tlb /namespace:xRemoteServerLib /out:xRemoteServerLib.dll
-    [
-        object,
-        uuid(83A9F23F-1DF3-4C5F-A54E-698C35A7A908),
-        version(1.0),
-        helpstring("IRemoteClassFactory"),
-        dual,
-        oleautomation
-    ]
-    interface IRemoteClassFactory : IDispatch
-    {
-        [id(1)] HRESULT CreateInstance(
-            [in] REFIID riid,
-            [out] IUnknown **ppObject
-        );
-
-        [id(2)] HRESULT LockServer(BOOL fLock);
-    };
 
     [
         uuid(F4B59339-9492-451F-8F84-742B43C355A1),
@@ -37,43 +134,15 @@ library xRemoteServerLib
     {
         [default] interface IRemoteClassFactory;
     };
-    /************************************************************************/
-    [
-        object,
-        uuid(5FA6533F-A1A9-4666-911B-319071A71085),
-        version(1.0),
-        helpstring("IShellFolder"),
-        dual,
-        oleautomation
-    ]
-    interface IShellFolder : IDispatch
-    {
-        [id(3)] HRESULT show();    //No arguments, no result 
-        [id(11)] HRESULT computeit(int inarg, double *outarg);
-    };
-
-    [
-        object,
-        uuid(5F526937-8A2E-4BB1-923D-DD78E668B4FF),
-        version(1.0),
-        helpstring("ISystemInfo"),
-        dual,
-        oleautomation
-    ]
-    interface ISystemInfo : IDispatch
-    {
-        
-    };
 
     [
         uuid(D8C967BC-FC34-49A7-9DC3-247B4D96E434),
         version(1.0),
-        helpstring("xRemoteClassFactory Class")
+        helpstring("xRemoteServerFileSystem Class")
     ]
-    coclass xRemoteServer
+    coclass xRemoteServerFileSystem
     {
-        [default] interface IShellFolder;
-        interface ISystemInfo;
+        [default] interface IFileSystem;
     };
 }
 

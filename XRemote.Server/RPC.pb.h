@@ -747,14 +747,17 @@ class RpcReturn : public ::google::protobuf::Message /* @@protoc_insertion_point
 
   // accessors -------------------------------------------------------
 
-  // .RPC.VariantParam ReturnVal = 3;
-  bool has_returnval() const;
-  void clear_returnval();
-  static const int kReturnValFieldNumber = 3;
-  const ::RPC::VariantParam& returnval() const;
-  ::RPC::VariantParam* release_returnval();
-  ::RPC::VariantParam* mutable_returnval();
-  void set_allocated_returnval(::RPC::VariantParam* returnval);
+  // repeated .RPC.VariantParam Ref_Out_Params = 3;
+  int ref_out_params_size() const;
+  void clear_ref_out_params();
+  static const int kRefOutParamsFieldNumber = 3;
+  const ::RPC::VariantParam& ref_out_params(int index) const;
+  ::RPC::VariantParam* mutable_ref_out_params(int index);
+  ::RPC::VariantParam* add_ref_out_params();
+  ::google::protobuf::RepeatedPtrField< ::RPC::VariantParam >*
+      mutable_ref_out_params();
+  const ::google::protobuf::RepeatedPtrField< ::RPC::VariantParam >&
+      ref_out_params() const;
 
   // .RPC.RpcReturn.ExceptionInfo Exception = 4;
   bool has_exception() const;
@@ -781,7 +784,7 @@ class RpcReturn : public ::google::protobuf::Message /* @@protoc_insertion_point
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::RPC::VariantParam* returnval_;
+  ::google::protobuf::RepeatedPtrField< ::RPC::VariantParam > ref_out_params_;
   ::RPC::RpcReturn_ExceptionInfo* exception_;
   ::google::protobuf::int32 callid_;
   ::google::protobuf::int32 hresult_;
@@ -1698,54 +1701,34 @@ inline void RpcReturn::set_hresult(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:RPC.RpcReturn.HResult)
 }
 
-// .RPC.VariantParam ReturnVal = 3;
-inline bool RpcReturn::has_returnval() const {
-  return this != internal_default_instance() && returnval_ != NULL;
+// repeated .RPC.VariantParam Ref_Out_Params = 3;
+inline int RpcReturn::ref_out_params_size() const {
+  return ref_out_params_.size();
 }
-inline void RpcReturn::clear_returnval() {
-  if (GetArenaNoVirtual() == NULL && returnval_ != NULL) {
-    delete returnval_;
-  }
-  returnval_ = NULL;
+inline void RpcReturn::clear_ref_out_params() {
+  ref_out_params_.Clear();
 }
-inline const ::RPC::VariantParam& RpcReturn::returnval() const {
-  const ::RPC::VariantParam* p = returnval_;
-  // @@protoc_insertion_point(field_get:RPC.RpcReturn.ReturnVal)
-  return p != NULL ? *p : *reinterpret_cast<const ::RPC::VariantParam*>(
-      &::RPC::_VariantParam_default_instance_);
+inline const ::RPC::VariantParam& RpcReturn::ref_out_params(int index) const {
+  // @@protoc_insertion_point(field_get:RPC.RpcReturn.Ref_Out_Params)
+  return ref_out_params_.Get(index);
 }
-inline ::RPC::VariantParam* RpcReturn::release_returnval() {
-  // @@protoc_insertion_point(field_release:RPC.RpcReturn.ReturnVal)
-  
-  ::RPC::VariantParam* temp = returnval_;
-  returnval_ = NULL;
-  return temp;
+inline ::RPC::VariantParam* RpcReturn::mutable_ref_out_params(int index) {
+  // @@protoc_insertion_point(field_mutable:RPC.RpcReturn.Ref_Out_Params)
+  return ref_out_params_.Mutable(index);
 }
-inline ::RPC::VariantParam* RpcReturn::mutable_returnval() {
-  
-  if (returnval_ == NULL) {
-    returnval_ = new ::RPC::VariantParam;
-  }
-  // @@protoc_insertion_point(field_mutable:RPC.RpcReturn.ReturnVal)
-  return returnval_;
+inline ::RPC::VariantParam* RpcReturn::add_ref_out_params() {
+  // @@protoc_insertion_point(field_add:RPC.RpcReturn.Ref_Out_Params)
+  return ref_out_params_.Add();
 }
-inline void RpcReturn::set_allocated_returnval(::RPC::VariantParam* returnval) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete returnval_;
-  }
-  if (returnval) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      returnval = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, returnval, submessage_arena);
-    }
-    
-  } else {
-    
-  }
-  returnval_ = returnval;
-  // @@protoc_insertion_point(field_set_allocated:RPC.RpcReturn.ReturnVal)
+inline ::google::protobuf::RepeatedPtrField< ::RPC::VariantParam >*
+RpcReturn::mutable_ref_out_params() {
+  // @@protoc_insertion_point(field_mutable_list:RPC.RpcReturn.Ref_Out_Params)
+  return &ref_out_params_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::RPC::VariantParam >&
+RpcReturn::ref_out_params() const {
+  // @@protoc_insertion_point(field_list:RPC.RpcReturn.Ref_Out_Params)
+  return ref_out_params_;
 }
 
 // .RPC.RpcReturn.ExceptionInfo Exception = 4;

@@ -47,7 +47,7 @@ message RpcReturn
 {
     sfixed32 CallID=1;
     sfixed32 HResult=2;
-    VariantParam ReturnVal=3;
+    repeated VariantParam Ref_Out_Params=3;
 
     message ExceptionInfo
     {

@@ -44,9 +44,9 @@ int _tmain(int argc, char *argv[])
 {
     hxc::_DataPool::Initialize();
 
-    hxc::rpc::CStub<ClassFactoryImpl> * p = nullptr;
-    hxc::rpc::CStub<ClassFactoryImpl>::CreateInstance(reinterpret_cast<void**>(&p));
-    std::unique_ptr<hxc::rpc::CStub<ClassFactoryImpl>> ptr(p);
+    hxc::ObjectCreator<ClassFactoryImpl> * p = nullptr;
+    hxc::ObjectCreator<ClassFactoryImpl>::CreateInstance(reinterpret_cast<void**>(&p));
+    std::unique_ptr<hxc::ObjectCreator<ClassFactoryImpl>> ptr(p);
 
     char a[10];
     std::cin >> a;

@@ -5,6 +5,7 @@ libcef/
 libx264/
 XRemote.Messages/protobuf/
 XRemote/resources/lib/*
+tools/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -29,6 +30,8 @@ ipch/
 *.tlb
 *_h.h
 *_i.c
+*_p.c
+dlldata.c
 
 # Distribution / packaging
 .Python

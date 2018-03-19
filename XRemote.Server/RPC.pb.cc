@@ -220,7 +220,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _weak_field_map_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::RPC::RpcReturn, callid_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::RPC::RpcReturn, hresult_),
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::RPC::RpcReturn, returnval_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::RPC::RpcReturn, ref_out_params_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::RPC::RpcReturn, exception_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
@@ -272,16 +272,16 @@ void AddDescriptorsImpl() {
       "RpcInvoke\022\020\n\010ObjectID\030\001 \001(\017\022\023\n\013Interface"
       "ID\030\002 \001(\007\022\016\n\006CallID\030\003 \001(\017\022\016\n\006DispID\030\004 \001(\005"
       "\022\016\n\006wFlags\030\005 \001(\005\022!\n\006Params\030\006 \003(\0132\021.RPC.V"
-      "ariantParam\"\307\001\n\tRpcReturn\022\016\n\006CallID\030\001 \001("
-      "\017\022\017\n\007HResult\030\002 \001(\017\022$\n\tReturnVal\030\003 \001(\0132\021."
-      "RPC.VariantParam\022/\n\tException\030\004 \001(\0132\034.RP"
-      "C.RpcReturn.ExceptionInfo\032B\n\rExceptionIn"
-      "fo\022\023\n\013Description\030\001 \001(\t\022\r\n\005scode\030\002 \001(\005\022\r"
-      "\n\005wCode\030\003 \001(\0052\024\n\022RemoteClassFactoryB\002H\002b"
-      "\006proto3"
+      "ariantParam\"\314\001\n\tRpcReturn\022\016\n\006CallID\030\001 \001("
+      "\017\022\017\n\007HResult\030\002 \001(\017\022)\n\016Ref_Out_Params\030\003 \003"
+      "(\0132\021.RPC.VariantParam\022/\n\tException\030\004 \001(\013"
+      "2\034.RPC.RpcReturn.ExceptionInfo\032B\n\rExcept"
+      "ionInfo\022\023\n\013Description\030\001 \001(\t\022\r\n\005scode\030\002 "
+      "\001(\005\022\r\n\005wCode\030\003 \001(\0052\024\n\022RemoteClassFactory"
+      "B\002H\002b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 687);
+      descriptor, 692);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "RPC.proto", &protobuf_RegisterTypes);
 }
@@ -768,15 +768,13 @@ void RpcReturn_ExceptionInfo::InternalSwap(RpcReturn_ExceptionInfo* other) {
 // ===================================================================
 
 void RpcReturn::InitAsDefaultInstance() {
-  ::RPC::_RpcReturn_default_instance_._instance.get_mutable()->returnval_ = const_cast< ::RPC::VariantParam*>(
-      ::RPC::VariantParam::internal_default_instance());
   ::RPC::_RpcReturn_default_instance_._instance.get_mutable()->exception_ = const_cast< ::RPC::RpcReturn_ExceptionInfo*>(
       ::RPC::RpcReturn_ExceptionInfo::internal_default_instance());
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int RpcReturn::kCallIDFieldNumber;
 const int RpcReturn::kHResultFieldNumber;
-const int RpcReturn::kReturnValFieldNumber;
+const int RpcReturn::kRefOutParamsFieldNumber;
 const int RpcReturn::kExceptionFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
@@ -791,13 +789,9 @@ RpcReturn::RpcReturn()
 RpcReturn::RpcReturn(const RpcReturn& from)
   : ::google::protobuf::Message(),
       _internal_metadata_(NULL),
+      ref_out_params_(from.ref_out_params_),
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  if (from.has_returnval()) {
-    returnval_ = new ::RPC::VariantParam(*from.returnval_);
-  } else {
-    returnval_ = NULL;
-  }
   if (from.has_exception()) {
     exception_ = new ::RPC::RpcReturn_ExceptionInfo(*from.exception_);
   } else {
@@ -810,9 +804,9 @@ RpcReturn::RpcReturn(const RpcReturn& from)
 }
 
 void RpcReturn::SharedCtor() {
-  ::memset(&returnval_, 0, static_cast<size_t>(
+  ::memset(&exception_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&hresult_) -
-      reinterpret_cast<char*>(&returnval_)) + sizeof(hresult_));
+      reinterpret_cast<char*>(&exception_)) + sizeof(hresult_));
   _cached_size_ = 0;
 }
 
@@ -822,7 +816,6 @@ RpcReturn::~RpcReturn() {
 }
 
 void RpcReturn::SharedDtor() {
-  if (this != internal_default_instance()) delete returnval_;
   if (this != internal_default_instance()) delete exception_;
 }
 

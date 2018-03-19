@@ -69,20 +69,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CfxUiWnd.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="CfxUiWnd.Designer.cs">
-      <DependentUpon>CfxUiWnd.cs</DependentUpon>
-    </Compile>
     <Compile Include="Common\Crc32.cs" />
+    <Compile Include="Common\HtmlFormBase.cs" />
+    <Compile Include="Common\JSInteropAttribute.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="InterfacesImpl\SystemInfoProxy.cs" />
-    <Compile Include="MainForm.cs">
+    <Compile Include="MainForm.cs" />
+    <Compile Include="MainFrame.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <Compile Include="MainFrame.Designer.cs">
+      <DependentUpon>MainFrame.cs</DependentUpon>
     </Compile>
     <Compile Include="InterfacesImpl\ClassFactoryProxy.cs" />
     <Compile Include="Network\Messages\RPC.cs" />
@@ -93,12 +90,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Common\CacheBuffer.cs" />
     <Compile Include="Utility.cs" />
-    <EmbeddedResource Include="CfxUiWnd.resx">
-      <DependentUpon>CfxUiWnd.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MainForm.resx">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <EmbeddedResource Include="MainFrame.resx">
+      <DependentUpon>MainFrame.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -124,91 +117,218 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="resources\lib\bootstrap-3.3.0\glyphicons-halflings-regular.eot" />
-    <None Include="resources\lib\bootstrap-3.3.0\glyphicons-halflings-regular.ttf" />
-    <None Include="resources\lib\bootstrap-3.3.0\glyphicons-halflings-regular.woff" />
-    <None Include="resources\lib\jquery-3.1.1\jquery-3.1.1.min.map" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Host.html" />
+    <Content Include="Host.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="MainForm.htm">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="resources\lib\bootstrap-3.3.0\bootstrap-theme.min.css" />
-    <Content Include="resources\lib\bootstrap-3.3.0\bootstrap.min.css" />
-    <Content Include="resources\lib\bootstrap-3.3.0\bootstrap.min.js" />
-    <Content Include="resources\lib\bootstrap-3.3.0\glyphicons-halflings-regular.svg" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\color.css" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\easyui-lang-zh_CN.js" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\easyui.css" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icon.css" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\back.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\blank.gif" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\camera.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\cancel.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\clear.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\console.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\cut.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\display.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\edit_add.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\edit_remove.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\exit.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\filesave.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\filter.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\folder.svg" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\gear.svg" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\help.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\host.svg" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_chart.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_clipart.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_picture.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_shapes.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_smartart.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\lock.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\man.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\mini_add.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\mini_edit.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\mini_refresh.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\more.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\network.svg" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\no.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\ok.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\pencil.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\print.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\reboot.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\redo.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\reload.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\search.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\shutdown.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\sum.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\tip.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\undo.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\accordion_arrows.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\blank.gif" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\calendar_arrows.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\combo_arrow.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\datagrid_icons.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\datebox_arrow.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\layout_arrows.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\linkbutton_bg.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\loading.gif" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\menu_arrows.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\messager_icons.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\pagination_icons.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\panel_tools.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\passwordbox_close.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\passwordbox_open.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\searchbox_button.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\slider_handle.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\spinner_arrows.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\tabs_icons.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\tree_icons.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\images\validatebox_warning.png" />
-    <Content Include="resources\lib\easyui.bootstrap-1.5\jquery.easyui.min.js" />
-    <Content Include="resources\lib\jquery-3.1.1\jquery-3.1.1.min.js" />
+    <Content Include="resources\lib\easyui.bootstrap-1.5\color.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\easyui-lang-zh_CN.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\easyui.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icon.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\back.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\blank.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\camera.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\cancel.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\clear.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\console.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\cut.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\display.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\edit_add.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\edit_remove.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\exit.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\filesave.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\filter.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\folder.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\gear.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\help.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\host.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_chart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_clipart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_picture.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_shapes.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\large_smartart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\lock.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\man.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\mini_add.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\mini_edit.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\mini_refresh.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\more.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\network.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\no.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\ok.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\pencil.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\print.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\reboot.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\redo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\reload.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\search.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\shutdown.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\sum.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\tip.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\icons\undo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\accordion_arrows.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\blank.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\calendar_arrows.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\combo_arrow.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\datagrid_icons.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\datebox_arrow.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\layout_arrows.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\linkbutton_bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\loading.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\menu_arrows.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\messager_icons.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\pagination_icons.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\panel_tools.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\passwordbox_close.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\passwordbox_open.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\searchbox_button.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\slider_handle.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\spinner_arrows.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\tabs_icons.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\tree_icons.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\images\validatebox_warning.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\lib\easyui.bootstrap-1.5\jquery.easyui.min.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="resources\scripts\Host.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -225,6 +345,7 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

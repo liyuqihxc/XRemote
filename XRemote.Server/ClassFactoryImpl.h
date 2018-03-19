@@ -5,11 +5,12 @@
 
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/message_lite.h>
+#include "RPC.pb.h"
 
 class ZeroCopyNetworkInputStream : public google::protobuf::io::ZeroCopyInputStream
 {
 public:
-    ZeroCopyNetworkInputStream(hxc::tcp_stream& tcp_stream, int capacity);
+    ZeroCopyNetworkInputStream(hxc::tcp_stream& tcp_stream, int32_t capacity);
     ~ZeroCopyNetworkInputStream();
     ZeroCopyNetworkInputStream(const ZeroCopyNetworkInputStream& o) = delete;
     ZeroCopyNetworkInputStream& operator=(const ZeroCopyNetworkInputStream& o) = delete;
@@ -36,22 +37,29 @@ private:
 class ZeroCopyNetworkOutputStream : public google::protobuf::io::ZeroCopyOutputStream
 {
 public:
-    explicit ZeroCopyNetworkOutputStream(hxc::tcp_stream& tcp_stream);
+    ZeroCopyNetworkOutputStream(hxc::tcp_stream& tcp_stream, int32_t capacity);
     ~ZeroCopyNetworkOutputStream();
     ZeroCopyNetworkOutputStream(const ZeroCopyNetworkOutputStream& o) = delete;
     ZeroCopyNetworkOutputStream& operator=(const ZeroCopyNetworkOutputStream& o) = delete;
 public:
-    virtual bool Next(const void** data, int* size);
+    virtual bool Next(void** data, int* size);
     virtual void BackUp(int count);
-    virtual bool Skip(int count);
     virtual long long ByteCount() const;
+    virtual bool WriteAliasedRaw(const void* data, int size);
+    virtual bool AllowsAliasing() const { return true; }
     static bool WriteDelimitedTo(const google::protobuf::MessageLite & message, google::protobuf::io::ZeroCopyOutputStream * rawOutput);
 private:
     hxc::tcp_stream _tcp_stream;
+
+    uint8_t * _buffer;
+    const int32_t _capacity;
+    int32_t _ptr;
+
+    bool _allow_backup;
 };
 
 class ClassFactoryImpl :
-    public hxc::rpc::IDispatchImpl<IRemoteClassFactory>
+    public IRemoteClassFactory
 {
 public:
     ClassFactoryImpl();
@@ -68,9 +76,9 @@ public:
 private:
     DWORD_PTR OnReceive(DWORD_PTR Param, HANDLE hCancel);
     DWORD_PTR MaintainConnection(DWORD_PTR Param, HANDLE hCancel);
-
+    void RemoteActivation(const RPC::RpcInvoke& invoke, ZeroCopyNetworkOutputStream& nos);
 protected:
-    typedef hxc::rpc::CStub<ClassFactoryImpl> _thisclass;
+    typedef hxc::ObjectCreator<ClassFactoryImpl> _thisclass;
     typedef struct _Interface_Entry
     {
         const IID* riid;
@@ -82,7 +90,6 @@ protected:
         static const Interface_Entry entrys[] =
         {
             { &__uuidof(IUnknown), [](_thisclass* p) { return static_cast<IUnknown*>(p); } },
-            { &__uuidof(IDispatch), [](_thisclass* p) {return static_cast<IDispatch*>(p); } },
             { nullptr, nullptr }
         };
         return entrys;

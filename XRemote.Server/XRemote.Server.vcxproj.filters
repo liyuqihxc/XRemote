@@ -87,6 +87,9 @@
     <ClInclude Include="ClassFactoryImpl.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="class\NetworkManager.h">
+      <Filter>class</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -142,6 +145,15 @@
     </ClCompile>
     <ClCompile Include="ClassFactoryImpl.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dlldata.c">
+      <Filter>生成的文件</Filter>
+    </ClCompile>
+    <ClCompile Include="xRemoteServer_p.c">
+      <Filter>生成的文件</Filter>
+    </ClCompile>
+    <ClCompile Include="class\NetworkManager.cpp">
+      <Filter>class</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
