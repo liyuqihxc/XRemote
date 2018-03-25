@@ -8,8 +8,6 @@ extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 namespace hxc
 {
-namespace rpc
-{
     HRESULT _TypeInfoHolder::GetTI(LCID lcid, ITypeInfo ** ppInfo)
     {
         _ASSERT(ppInfo != NULL);
@@ -190,6 +188,4 @@ namespace rpc
         return S_OK;
     }
 
-
-};//namespace rpc
 };//namespace hxc

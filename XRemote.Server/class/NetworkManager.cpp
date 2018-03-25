@@ -3,8 +3,7 @@
 #include "NetworkManager.h"
 
 hxc::TcpClient NetworkManager::_Connection(AF_INET);
-std::unique_ptr<hxc::RpcStub> _ClassFactoryStub;
-std::map<int32_t, std::unique_ptr<hxc::RpcStub>> _ObjectMap;
+std::map<int32_t, std::unique_ptr<hxc::InterfaceStub>> _ObjectMap;
 hxc::Task NetworkManager::_EstablishConnectionTask(&NetworkManager::EstablishConnection, NULL, WT_EXECUTEINLONGTHREAD);
 
 DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param, HANDLE hCancel)
@@ -21,8 +20,6 @@ DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param, HANDLE hCancel)
             ::Sleep(1000);
             continue;
         }
-
-        hxc::rpc::CStub<ClassFactoryImpl>::CreateInstance(_Connection, reinterpret_cast<void**>(&_ClassFactoryStub));
 
         SOCKET s = _Connection.get__Client()->get__Handle();
         WSAEVENT hClose = ::WSACreateEvent();
@@ -42,8 +39,6 @@ DWORD_PTR NetworkManager::EstablishConnection(DWORD_PTR Param, HANDLE hCancel)
 
         auto async = _Connection.get__Client()->BeginDisconnect(nullptr, NULL);
         _Connection.get__Client()->EndDisconnect(async);
-
-        _ClassFactoryStub = nullptr;
     }
 
     return 0;

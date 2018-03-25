@@ -11,13 +11,16 @@ public:
     NetworkManager& operator=(const NetworkManager&) = delete;
 public:
     static void Start();
+    static HRESULT RegisterClassObject(
+        _In_  REFCLSID  rclsid,
+        _In_  LPUNKNOWN pUnk
+    );
     static void Stop();
 private:
     static DWORD_PTR EstablishConnection(DWORD_PTR Param, HANDLE hCancel);
 private:
     static hxc::TcpClient _Connection;
-    static std::unique_ptr<hxc::RpcStub> _ClassFactoryStub;
-    static std::map<int32_t, std::unique_ptr<hxc::RpcStub>> _ObjectMap;
+    static std::map<int32_t, std::unique_ptr<hxc::InterfaceStub>> _ObjectMap;
     static hxc::Task _EstablishConnectionTask;
 };
 

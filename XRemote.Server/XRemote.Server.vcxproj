@@ -71,9 +71,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)class;$(ProjectDir)..\XRemote.Messages\protobuf\src;$(ProjectDir);$(IncludePath)</IncludePath>
-    <SourcePath>$(ProjectDir)class;$(ProjectDir)..\XRemote.Messages\protobuf\src;$(ProjectDir);$(SourcePath)</SourcePath>
-    <LibraryPath>$(LibraryPath);$(ProjectDir)..\XRemote.Messages\protobuf\</LibraryPath>
+    <IncludePath>$(ProjectDir)class;$(SolutionDir)lib_redist\protobuf\src;$(ProjectDir);$(IncludePath)</IncludePath>
+    <SourcePath>$(ProjectDir)class;$(SolutionDir)lib_redist\protobuf\src;$(ProjectDir);$(SourcePath)</SourcePath>
+    <LibraryPath>$(LibraryPath);$(SolutionDir)lib_redist\protobuf\</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -92,6 +92,7 @@
       <PreprocessorDefinitions>_SVC_EXE;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -195,6 +196,7 @@ tlbimp xRemoteServer.tlb /namespace:xRemoteServerLib /out:xRemoteServerLib.dll</
     <ClInclude Include="class\SystemInfo.h" />
     <ClInclude Include="class\Tasks.h" />
     <ClInclude Include="class\Utility.h" />
+    <ClInclude Include="FileSystemImpl.h" />
     <ClInclude Include="MainApp.h" />
     <ClInclude Include="Res.h" />
     <ClInclude Include="Resource.h" />
@@ -227,6 +229,7 @@ tlbimp xRemoteServer.tlb /namespace:xRemoteServerLib /out:xRemoteServerLib.dll</
       </DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="FileSystemImpl.cpp" />
     <ClCompile Include="MainApp.cpp" />
     <ClCompile Include="Res.cpp" />
     <ClCompile Include="RPC.pb.cc">

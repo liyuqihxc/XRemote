@@ -90,6 +90,9 @@
     <ClInclude Include="class\NetworkManager.h">
       <Filter>class</Filter>
     </ClInclude>
+    <ClInclude Include="FileSystemImpl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -154,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="class\NetworkManager.cpp">
       <Filter>class</Filter>
+    </ClCompile>
+    <ClCompile Include="FileSystemImpl.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

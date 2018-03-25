@@ -1,12 +1,13 @@
-// XRemote.Server.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌĞòµÄÈë¿Úµã¡£
+ï»¿// XRemote.Server.cpp : å®šä¹‰æ§åˆ¶å°åº”ç”¨ç¨‹åºçš„å…¥å£ç‚¹ã€‚
 //
 
 #include "stdafx.h"
+#include "xRemoteServer_h.h"
 #include "hxc.h"
 #define X264_API_IMPORTS
-#include "../../libx264/include/x264.h"
 #include "MainApp.h"
 #include <iostream>
+#include "FileSystemImpl.h"
 
 #pragma comment(lib, "Rpcrt4.lib")
 
@@ -21,6 +22,12 @@ hxc::ServiceHost::ServiceHost()
     this->m_pMap = map;
 }
 hxc::ServiceHost __host_;
+
+hxc::OBJECT_ENTRY _OBJECT_ENTRYS[] = 
+{
+    { FileSystemImpl::_ClassFactoryCreatorClass::CreateInstance, hxc::ObjectCreator<FileSystemImpl>::CreateInstance, &__uuidof(XRemoteServerFileSystem) },
+    { nullptr, nullptr, nullptr }
+};
 
 void MainApp::OnStart()
 {
@@ -45,7 +52,7 @@ int _tmain(int argc, char *argv[])
     hxc::_DataPool::Initialize();
 
     hxc::ObjectCreator<ClassFactoryImpl> * p = nullptr;
-    hxc::ObjectCreator<ClassFactoryImpl>::CreateInstance(reinterpret_cast<void**>(&p));
+    //hxc::ObjectCreator<ClassFactoryImpl>::CreateInstance(reinterpret_cast<void**>(&p));
     std::unique_ptr<hxc::ObjectCreator<ClassFactoryImpl>> ptr(p);
 
     char a[10];

@@ -59,7 +59,7 @@ private:
 };
 
 class ClassFactoryImpl :
-    public IRemoteClassFactory
+    public IClassFactory
 {
 public:
     ClassFactoryImpl();

@@ -1,12 +1,32 @@
 ﻿#pragma once
 
-#ifndef _BACKDOOR_PROXYSTUB_H_
-#define _BACKDOOR_PROXYSTUB_H_
-
-#include "xRemoteServer_h.h"
+#ifndef _PROXYSTUB_H_
+#define _PROXYSTUB_H_
 
 namespace hxc
 {
+    typedef HRESULT (WINAPI _CREATORFUNC)(void*, REFIID, void**);
+
+#define BEGIN_INTERFACE_MAP(x) \
+protected:\
+typedef hxc::ObjectCreator<x> _thisclass;\
+typedef struct _Interface_Entry\
+{\
+    const IID* riid;\
+    typedef std::function<void* (_thisclass*)> Converter;\
+    Converter converter;\
+} Interface_Entry;\
+const static Interface_Entry* WINAPI _GetEntries()\
+{\
+    static const Interface_Entry entrys[]={\
+    { &__uuidof(IUnknown), [](_thisclass* p) { return static_cast<IUnknown*>(p); } },
+
+#define INTERFACE_ENTRY(x)\
+{ &__uuidof(x), [](_thisclass* p) { return static_cast<x*>(p); } },
+
+#define END_INTERFACE_MAP() \
+{ nullptr, nullptr }}; return entrys;}
+
     class _TypeInfoHolder
     {
     public:
@@ -153,7 +173,9 @@ namespace hxc
         }
 
         static HRESULT WINAPI CreateInstance(
-            _COM_Outptr_ void** ppv
+            _In_opt_ void* pv,
+            _In_ REFIID riid,
+            _COM_Outptr_ LPVOID* ppv
         )
         {
             if (ppv == NULL)
@@ -168,9 +190,11 @@ namespace hxc
                 pret->Release();
                 return hres;
             }
-            *ppv = pret;
 
-            pret->AddRef();//因为引用计数初始值为0
+            hres = pret->QueryInterface(riid, ppv);
+            if (FAILED(hres))
+                pret->Release();
+
             return hres;
         }
     public:
@@ -183,7 +207,7 @@ namespace hxc
             }
             *ppvObject = nullptr;
 
-            const static Interface_Entry* pEntries = T::_GetEntries();
+            const static T::Interface_Entry* pEntries = T::_GetEntries();
             for (;pEntries->riid != nullptr; pEntries++)
             {
                 if (IsEqualGUID(riid, *pEntries->riid))
@@ -216,28 +240,60 @@ namespace hxc
         volatile long _RefCount;
     };
 
-    typedef struct _Object_Entry
+#define DECLARE_CLASS_FACTORY(x) \
+    typedef hxc::ObjectCreator<hxc::ClassFactory<hxc::ObjectCreator<x>::CreateInstance>> _ClassFactoryCreatorClass;
+
+    template <_CREATORFUNC fn>
+    class DECLSPEC_NOVTABLE ClassFactory :
+        public IClassFactory
     {
-        typedef HRESULT(WINAPI _CREATORFUNC)(
+    public:
+        STDMETHOD(CreateInstance)(
+            _Inout_opt_ LPUNKNOWN pUnkOuter,
+            _In_ REFIID riid,
+            _COM_Outptr_ void** ppvObj
+        )
+        {
+            return S_OK;
+        }
+
+        STDMETHOD(LockServer)(_In_ BOOL fLock)
+        {
+            return S_OK;
+        }
+
+        BEGIN_INTERFACE_MAP(ClassFactory)
+            INTERFACE_ENTRY(IClassFactory)
+        END_INTERFACE_MAP()
+
+        static HRESULT WINAPI CreateInstance(
             _In_opt_ void* pv,
             _In_ REFIID riid,
             _COM_Outptr_ LPVOID* ppv
-            );
+        )
+        {
+            fn(pv, riid, ppv);
+            return 0;
+        }
+    };
 
+    typedef struct _Object_Entry
+    {
+        _CREATORFUNC *pfnGetClassObject;
         _CREATORFUNC *pfnCreateInstance;
-        const GUID& ObjGUID;
+        const CLSID* ObjGUID;
     } OBJECT_ENTRY, *POBJECT_ENTRY;
 
-    class RpcStub
+    class InterfaceStub
     {
     public:
-        RpcStub(const RpcStub&) = delete;
-        RpcStub& operator=(const RpcStub&) = delete;
-        explicit RpcStub(int32_t objectid);
-    private:
-        std::map<uint32_t, IDispatch*> _InterfaceMap;
+        InterfaceStub(const InterfaceStub&) = delete;
+        InterfaceStub& operator=(const InterfaceStub&) = delete;
+        explicit InterfaceStub(IDispatch* pDisp);
     };
 
 };//namespace hxc
 
-#endif//if !defined _BACKDOOR_PROXYSTUB_H_
+extern hxc::OBJECT_ENTRY _OBJECT_ENTRYS[];
+
+#endif//if !defined _PROXYSTUB_H_

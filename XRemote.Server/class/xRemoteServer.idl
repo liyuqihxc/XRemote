@@ -140,7 +140,7 @@ library xRemoteServerLib
         version(1.0),
         helpstring("xRemoteServerFileSystem Class")
     ]
-    coclass xRemoteServerFileSystem
+    coclass XRemoteServerFileSystem
     {
         [default] interface IFileSystem;
     };

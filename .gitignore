@@ -1,11 +1,9 @@
 Test/
 
 # Library Redistribution
-libcef/
-libx264/
-XRemote.Messages/protobuf/
-XRemote/resources/lib/*
-tools/
+lib_redist/
+node_modules/
+/package-lock.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
