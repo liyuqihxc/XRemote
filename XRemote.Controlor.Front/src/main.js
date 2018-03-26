@@ -3,7 +3,12 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import storeConfig from './store'
+import store from './store'
+import eui from 'element-ui'
+import eui_local from 'element-ui/lib/locale/lang/zh-CN'
+import 'element-ui/lib/theme-chalk/index.css'
+
+Vue.use(eui, { eui_local });
 
 Vue.config.productionTip = false
 
