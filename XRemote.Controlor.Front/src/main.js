@@ -5,10 +5,10 @@ import App from './App'
 import router from './router'
 import store from './store'
 import eui from 'element-ui'
-import eui_local from 'element-ui/lib/locale/lang/zh-CN'
+import euilocal from 'element-ui/lib/locale/lang/zh-CN'
 import 'element-ui/lib/theme-chalk/index.css'
 
-Vue.use(eui, { eui_local });
+Vue.use(eui, { euilocal })
 
 Vue.config.productionTip = false
 
@@ -16,6 +16,7 @@ Vue.config.productionTip = false
 new Vue({
   el: '#app',
   router,
+  store: store,
   components: { App },
   template: '<App/>'
 })

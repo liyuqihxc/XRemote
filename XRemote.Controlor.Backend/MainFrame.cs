@@ -53,7 +53,7 @@ namespace XRemote.Controlor
             //WebBrowser.LoadUrl($"file:///{ assemblyDir }\\{ typeof(MainFrame).Name }.htm");
             //WndMainFrame.LoadUrl("http://www.adobe.com/software/flash/about/");
             //WndMainFrame.LoadUrl("https://html5test.com/");
-            //WndMainFrame.LoadUrl("chrome://about");
+            WebBrowser.LoadUrl("http://localhost:8082");
             //RegisterFunctions(webBrowser.GlobalObject);
 
             //ClassFactory = new ClassFactoryImpl();

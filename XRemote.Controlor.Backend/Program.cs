@@ -13,6 +13,10 @@ using XRemote.Controlor.Network;
 
 namespace XRemote.Controlor
 {
+    public interface ISystemInfo
+    {
+
+    }
     static class Program
     {
         public static Config Config { get; private set; }
